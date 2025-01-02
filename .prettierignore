@@ -1,0 +1,20 @@
+# Bun specific
+bun.lockb
+
+# Ignore artifacts
+dist
+build
+
+# Dependencies
+node_modules
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+
+## Docs
+content/docs
+
+# Optional: Add other files/directories you want to ignore 

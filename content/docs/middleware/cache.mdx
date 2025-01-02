@@ -1,0 +1,88 @@
+---
+title: Cache Middleware
+description: The cache middleware provides intelligent caching and performance optimizations for the TUS API.
+---
+
+## Features
+
+- HTTP/3 and QUIC support
+- Dynamic cache policy selection
+- Security headers
+- Early Hints support
+- Access tracking for cache warming
+
+## Configuration
+
+```typescript
+{
+    CACHE: {
+        WARM_TTL: 3600,        // Cache warming TTL (1 hour)
+        WARM_THRESHOLD: 100,   // Access threshold for warming
+        WARM_INTERVAL: 900,    // Warming interval (15 minutes)
+    },
+    HTTP: {
+        VERSION: '3',
+        EARLY_HINTS: true,
+        ENABLE_QUIC: true,
+    }
+}
+```
+
+## Cache Policies
+
+### Static Content
+
+- Long-term caching for unchanging resources
+- Includes security headers and HTTP/3 support
+
+### Frequently Accessed
+
+- Dynamic caching based on access patterns
+- Automatic cache warming for popular resources
+
+### Dynamic Content
+
+- Short-term caching with validation
+- Early Hints for performance optimization
+
+## Security Headers
+
+The middleware automatically adds security headers:
+
+```http
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+Alt-Svc: h3=":443"; ma=86400
+```
+
+## Cache Warming
+
+The middleware includes an intelligent cache warming system:
+
+1. **Access Tracking**
+
+    - Monitors resource access frequency
+    - Identifies frequently accessed resources
+
+2. **Automatic Warming**
+
+    - Pre-caches popular resources
+    - Adjusts warming based on access patterns
+
+3. **Performance Optimization**
+    - Early Hints for supported browsers
+    - HTTP/3 and QUIC for faster delivery
+
+## Implementation Example
+
+```typescript
+// Initialize cache middleware
+app.use('*', cacheMiddleware());
+
+// The middleware automatically:
+// 1. Enables HTTP/3
+// 2. Tracks resource access
+// 3. Sets appropriate cache headers
+// 4. Adds security headers
+// 5. Enables Early Hints when supported
+```

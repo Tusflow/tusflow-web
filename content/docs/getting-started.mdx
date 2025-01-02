@@ -1,0 +1,196 @@
+---
+title: Getting Started
+description: A step-by-step guide to getting started with the TusFlow Upload API.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+1. A [Cloudflare Workers](https://workers.cloudflare.com/) account
+2. Node.js (version 16 or higher) installed
+3. [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) installed
+4. An S3-compatible storage service (AWS S3, Tigris, R2, etc.)
+5. An Upstash Redis account for rate limiting (optional)
+
+## Quick Start Guide
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/evansso/tusflow-api
+cd tusflow-api
+```
+
+### 2.Install Dependencies
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+
+```bash tab
+npm install
+```
+
+```bash tab
+pnpm install
+```
+
+```bash tab
+yarn install
+```
+
+```bash tab
+bun install
+```
+
+</Tabs>
+
+### 3. Configure Environment Variables
+
+Create a `wrangler.toml` file in your project root:
+
+```toml title="wrangler.toml"
+name = "tusflow-api"
+main = "src/index.ts"
+compatibility_flags = [ "nodejs_compat" ]
+compatibility_date = "2024-09-23"
+
+[vars]
+AWS_REGION = "your-region"
+AWS_ACCESS_KEY_ID = "your-aws-key"
+AWS_SECRET_ACCESS_KEY = "your-aws-secret"
+AWS_ENDPOINT = "your-s3-endpoint"
+AWS_BUCKET_NAME = "your-bucket-name"
+UPSTASH_REDIS_REST_URL = "your-redis-url"
+UPSTASH_REDIS_REST_TOKEN = "your-redis-token"
+INTERNAL_API_KEY = "your-api-key"
+```
+
+### 4. Development
+
+Run the API locally:
+
+```bash
+npm run dev
+```
+
+### 5. Deployment
+
+Deploy to Cloudflare Workers:
+
+<Tabs items={["npm", "pnpm", "yarn", "bun"]}>
+
+```bash tab
+npm run deploy
+```
+
+```bash tab
+pnpm run deploy
+```
+
+```bash tab
+yarn run deploy
+```
+
+```bash tab
+bun run deploy
+```
+
+</Tabs>
+
+## Basic Usage Example
+
+Here's a simple example of how to use the API to upload a file:
+
+```javascript
+// Initialize the upload
+const response = await fetch('https://your-worker.workers.dev/files', {
+    method: 'POST',
+    headers: {
+        'Tus-Resumable': '1.0.0',
+        'Upload-Length': fileSize.toString(),
+        'Upload-Metadata': 'filename ' + btoa(file.name),
+    },
+});
+
+const location = response.headers.get('Location');
+
+// Upload file chunks
+let offset = 0;
+const chunkSize = 1024 * 1024; // 1MB chunks
+
+while (offset < fileSize) {
+    const chunk = file.slice(offset, offset + chunkSize);
+
+    await fetch(location, {
+        method: 'PATCH',
+        headers: {
+            'Tus-Resumable': '1.0.0',
+            'Upload-Offset': offset.toString(),
+            'Content-Type': 'application/offset+octet-stream',
+        },
+        body: chunk,
+    });
+
+    offset += chunk.size;
+}
+```
+
+## Project Structure
+
+```
+tusflow-api/
+├── src/
+│   ├── index.ts           # Main entry point
+│   ├── routes/           # API routes
+│   ├── middleware/       # Custom middleware
+│   └── utils/           # Helper functions
+├── wrangler.toml        # Cloudflare configuration
+└── package.json         # Project dependencies
+```
+
+## Features Configuration
+
+### S3 Storage
+
+The API supports any S3-compatible storage service. Configure your storage in `wrangler.toml`:
+
+```toml
+[vars]
+AWS_REGION = "auto"
+AWS_KEY = "your-key"
+AWS_SECRET = "your-secret"
+AWS_ENDPOINT = "https://your-s3-endpoint"
+AWS_BUCKET = "your-bucket"
+```
+
+### Rate Limiting
+
+Rate limiting is implemented using Upstash Redis. Configure it in `wrangler.toml`:
+
+```toml
+[vars]
+UPSTASH_REDIS_REST_URL = "your-redis-url"
+UPSTASH_REDIS_REST_TOKEN = "your-redis-token"
+```
+
+## Next Steps
+
+- Check out the [Authentication](/docs/authentication) documentation
+- Check out the [API Reference](/docs/api-reference/api-reference) for detailed endpoint documentation
+- Learn about [Error Handling](/docs/api-reference/error-handling)
+- Explore [Validation](/docs/features/validation) options
+- Understand [Chunk Management](/docs/features/chunk-management)
+
+## Support
+
+If you encounter any issues or need help, please:
+
+1. Check the [Error Handling](./api-reference/error-handling.md) documentation
+2. Open an issue on GitHub
+3. Contact our support team
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](../CONTRIBUTING.md) for details.

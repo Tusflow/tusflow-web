@@ -1,0 +1,295 @@
+---
+title: File Validation
+description: File validation middleware for ensuring upload security and integrity.
+---
+
+# File Validation Middleware
+
+The file validation middleware ensures that uploaded files meet security requirements and content restrictions.
+
+## Overview
+
+This middleware performs multiple validation checks:
+
+- File size limits
+- File type verification
+- Content validation
+- Malware scanning
+- Metadata validation
+
+## Configuration
+
+```typescript
+FILE_VALIDATION_CONFIG = {
+    ENABLE_TYPE_VALIDATION: true,
+    ALLOWED_FILE_TYPES: [
+        '.pdf',
+        '.doc',
+        '.docx',
+        '.txt',
+        '.jpg',
+        '.jpeg',
+        '.png',
+    ],
+    MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
+    MIN_FILE_SIZE: 1024, // 1KB
+    CHUNK_SIZE: {
+        MIN: 5 * 1024 * 1024, // 5MB
+        MAX: 50 * 1024 * 1024, // 50MB
+    },
+    METADATA_LIMITS: {
+        MAX_KEYS: 10,
+        MAX_SIZE: 2048, // 2KB total metadata size
+    },
+};
+```
+
+## Validation Checks
+
+### Size Validation
+
+```typescript
+async function validateFileSize(
+    size: number,
+    config: typeof FILE_VALIDATION_CONFIG
+): Promise<void> {
+    if (size < config.MIN_FILE_SIZE) {
+        throw new ValidationError('File size below minimum limit');
+    }
+    if (size > config.MAX_FILE_SIZE) {
+        throw new ValidationError('File size exceeds maximum limit');
+    }
+}
+```
+
+### File Type Validation
+
+```typescript
+async function validateFileType(
+    filename: string,
+    mimeType: string
+): Promise<void> {
+    const extension = path.extname(filename).toLowerCase();
+
+    if (!FILE_VALIDATION_CONFIG.ALLOWED_FILE_TYPES.includes(extension)) {
+        throw new ValidationError('File type not allowed');
+    }
+
+    // Additional MIME type validation
+    const expectedMimeType = MIME_TYPES[extension];
+    if (expectedMimeType && mimeType !== expectedMimeType) {
+        throw new ValidationError('Invalid MIME type for file extension');
+    }
+}
+```
+
+### Content Validation
+
+```typescript
+async function validateContent(chunk: Blob, offset: number): Promise<void> {
+    // Validate chunk size
+    if (
+        chunk.size < FILE_VALIDATION_CONFIG.CHUNK_SIZE.MIN ||
+        chunk.size > FILE_VALIDATION_CONFIG.CHUNK_SIZE.MAX
+    ) {
+        throw new ValidationError('Invalid chunk size');
+    }
+
+    // Check file signature/magic numbers
+    const signature = await readFileSignature(chunk);
+    if (!isValidSignature(signature)) {
+        throw new ValidationError('Invalid file signature');
+    }
+}
+```
+
+### Metadata Validation
+
+```typescript
+function validateMetadata(metadata: Record<string, string>): void {
+    const keys = Object.keys(metadata);
+
+    if (keys.length > FILE_VALIDATION_CONFIG.METADATA_LIMITS.MAX_KEYS) {
+        throw new ValidationError('Too many metadata keys');
+    }
+
+    const totalSize = JSON.stringify(metadata).length;
+    if (totalSize > FILE_VALIDATION_CONFIG.METADATA_LIMITS.MAX_SIZE) {
+        throw new ValidationError('Metadata size exceeds limit');
+    }
+}
+```
+
+## Integration
+
+The middleware integrates with the upload process:
+
+```typescript
+async function validateUpload(
+    request: Request,
+    config: typeof FILE_VALIDATION_CONFIG
+): Promise<void> {
+    const size = parseInt(request.headers.get('Upload-Length'));
+    const metadata = parseMetadata(request.headers.get('Upload-Metadata'));
+
+    await Promise.all([
+        validateFileSize(size, config),
+        validateFileType(metadata.filename, metadata.mimetype),
+        validateMetadata(metadata),
+    ]);
+}
+```
+
+## Error Handling
+
+Validation errors are returned in a standardized format:
+
+```json
+{
+    "error": {
+        "code": "validation_error",
+        "message": "File validation failed",
+        "details": {
+            "field": "size",
+            "limit": 100000000,
+            "actual": 150000000
+        }
+    }
+}
+```
+
+## Security Features
+
+1. **Content Type Verification**
+
+    - MIME type checking
+    - File signature validation
+    - Extension validation
+
+2. **Size Restrictions**
+
+    - Maximum file size
+    - Maximum chunk size
+    - Maximum metadata size
+
+3. **Malware Protection**
+
+    - File signature checking
+    - Content scanning
+    - Quarantine system
+
+4. **Metadata Security**
+    - Size limits
+    - Key count limits
+    - Content validation
+
+## Best Practices
+
+1. **File Type Safety**
+
+    - Maintain allowed file type list
+    - Validate both extension and MIME type
+    - Check file signatures
+
+2. **Size Management**
+
+    - Set appropriate size limits
+    - Consider storage capacity
+    - Monitor usage patterns
+
+3. **Content Security**
+
+    - Implement virus scanning
+    - Validate file integrity
+    - Check file signatures
+
+4. **Performance**
+    - Optimize validation order
+    - Cache validation results
+    - Use async operations
+
+## Example Usage
+
+Client-side implementation:
+
+```typescript
+async function uploadFile(file: File): Promise<void> {
+    // Pre-validate file
+    if (!isValidFileType(file.name)) {
+        throw new Error('Invalid file type');
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+        throw new Error('File too large');
+    }
+
+    // Prepare metadata
+    const metadata = {
+        filename: file.name,
+        mimetype: file.type,
+        size: file.size.toString(),
+    };
+
+    // Start upload
+    const response = await fetch('/upload', {
+        method: 'POST',
+        headers: {
+            'Upload-Length': file.size.toString(),
+            'Upload-Metadata': encodeMetadata(metadata),
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+    }
+}
+```
+
+## Testing
+
+Example validation tests:
+
+```typescript
+describe('File Validation Middleware', () => {
+    it('should validate allowed file types', async () => {
+        const file = new File(['content'], 'test.pdf', {
+            type: 'application/pdf',
+        });
+
+        await expect(validateFile(file)).resolves.not.toThrow();
+    });
+
+    it('should reject disallowed file types', async () => {
+        const file = new File(['content'], 'test.exe', {
+            type: 'application/x-msdownload',
+        });
+
+        await expect(validateFile(file)).rejects.toThrow(
+            'File type not allowed'
+        );
+    });
+
+    it('should validate file size limits', async () => {
+        const largeFile = new File(
+            [new ArrayBuffer(150 * 1024 * 1024)],
+            'large.pdf'
+        );
+
+        await expect(validateFile(largeFile)).rejects.toThrow(
+            'File size exceeds maximum limit'
+        );
+    });
+
+    it('should validate metadata limits', () => {
+        const metadata = {};
+        for (let i = 0; i < 20; i++) {
+            metadata[`key${i}`] = 'value';
+        }
+
+        expect(() => validateMetadata(metadata)).toThrow(
+            'Too many metadata keys'
+        );
+    });
+});
+```

@@ -1,0 +1,69 @@
+---
+title: File Validation
+description: Our API provides comprehensive file validation to ensure secure and reliable uploads.
+---
+
+## File Size Validation
+
+```http
+POST /files
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Length: 100000000
+Upload-Metadata: filetype aW1hZ2UvanBlZw==
+```
+
+Response if file exceeds limit:
+
+```http
+HTTP/1.1 413 Request Entity Too Large
+Tus-Resumable: 1.0.0
+```
+
+## MIME Type Validation
+
+Example of allowed MIME types:
+
+```http
+POST /files
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Length: 1048576
+Content-Type: image/jpeg
+Upload-Metadata: filename cGhvdG8uanBn
+```
+
+## Checksum Verification
+
+Using SHA-256 checksum:
+
+```http
+PATCH /files/24e533e02ec3bc40c387f1a0e460e216
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Offset: 0
+Upload-Checksum: sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Content-Type: application/offset+octet-stream
+```
+
+## Validation Rules
+
+1. File Size:
+
+   - Minimum: 1 byte
+   - Maximum: 5GB (configurable)
+
+2. Allowed File Types:
+   - Images: jpg, png, gif, webp
+   - Documents: pdf, doc, docx
+   - Archives: zip, rar
+3. Security Checks:
+
+   - Malware scanning
+   - File content verification
+   - Extension matching
+
+4. Checksum Algorithms:
+   - SHA-256 (recommended)
+   - MD5
+   - SHA-1

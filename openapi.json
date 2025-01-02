@@ -1,0 +1,710 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "TusFlow API",
+    "description": "A robust implementation of the TUS protocol for resumable file uploads.\nSupports multipart uploads, checksums, and file validation.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "MPESAFlow Team",
+      "url": "https://uploader.tus.api.mpesaflow.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://uploader.tus.api.mpesaflow.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Check API health status",
+        "description": "Returns the health status of the API and its dependent services (S3 and Redis)",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "System is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["healthy"]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "s3": {
+                          "type": "string",
+                          "enum": ["up"]
+                        },
+                        "redis": {
+                          "type": "string",
+                          "enum": ["up"]
+                        }
+                      }
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2024-12-17T11:37:50+03:00",
+                  "services": {
+                    "s3": "up",
+                    "redis": "up"
+                  },
+                  "version": "1.0.0"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "System is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["unhealthy"]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "services": {
+                      "type": "object",
+                      "properties": {
+                        "s3": {
+                          "type": "string",
+                          "enum": ["up", "down"]
+                        },
+                        "redis": {
+                          "type": "string",
+                          "enum": ["up", "down"]
+                        }
+                      }
+                    },
+                    "version": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "unhealthy",
+                  "timestamp": "2024-12-17T11:37:50+03:00",
+                  "services": {
+                    "s3": "down",
+                    "redis": "up"
+                  },
+                  "version": "1.0.0"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{uploadId}": {
+      "parameters": [
+        {
+          "name": "uploadId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Unique identifier for the upload"
+        }
+      ],
+      "post": {
+        "summary": "Create a new upload",
+        "description": "Initiates a new file upload session",
+        "tags": ["Upload"],
+        "parameters": [
+          {
+            "name": "Upload-Length",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Total size of the file in bytes"
+          },
+          {
+            "name": "Upload-Defer-Length",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["1"]
+            },
+            "description": "Indicates if the upload length will be provided later"
+          },
+          {
+            "name": "Tus-Resumable",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["1.0.0"]
+            },
+            "description": "TUS protocol version"
+          },
+          {
+            "name": "Upload-Metadata",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Custom metadata for the upload (base64 encoded)"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Upload created successfully",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "URL for the created resource"
+              },
+              "Tus-Resumable": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "TUS protocol version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Upload created successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request Entity Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "Get upload information",
+        "description": "Retrieve metadata about an ongoing upload",
+        "tags": ["Upload"],
+        "responses": {
+          "204": {
+            "description": "Upload information retrieved successfully",
+            "headers": {
+              "Upload-Offset": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Current offset of the upload"
+              },
+              "Upload-Length": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Total size of the file"
+              },
+              "Upload-Metadata": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Custom metadata associated with the upload"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["no-store"]
+                },
+                "description": "Caching instructions"
+              },
+              "Tus-Resumable": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "TUS protocol version"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get upload status",
+        "description": "Retrieve the current status of an upload including progress information",
+        "tags": ["Upload"],
+        "responses": {
+          "200": {
+            "description": "Upload status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uploadId": {
+                      "type": "string",
+                      "description": "Unique identifier of the upload"
+                    },
+                    "totalSize": {
+                      "type": "integer",
+                      "description": "Total size of the file in bytes"
+                    },
+                    "uploadedSize": {
+                      "type": "integer",
+                      "description": "Number of bytes uploaded so far"
+                    },
+                    "progress": {
+                      "type": "string",
+                      "description": "Upload progress as a percentage"
+                    },
+                    "chunkSize": {
+                      "type": "integer",
+                      "description": "Size of each upload chunk in bytes"
+                    },
+                    "networkSpeed": {
+                      "type": "number",
+                      "description": "Current upload speed in bytes per second"
+                    },
+                    "uploadedChunks": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "List of successfully uploaded chunk numbers"
+                    }
+                  }
+                },
+                "example": {
+                  "uploadId": "abc123",
+                  "totalSize": 1048576,
+                  "uploadedSize": 524288,
+                  "progress": "50.00",
+                  "chunkSize": 8388608,
+                  "networkSpeed": 1048576,
+                  "uploadedChunks": [1, 2, 3]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "message": "Upload not found",
+                  "statusCode": 404,
+                  "errorCode": "UPLOAD_NOT_FOUND"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Upload file chunk",
+        "description": "Upload a chunk of the file starting at the specified offset",
+        "tags": ["Upload"],
+        "parameters": [
+          {
+            "name": "Upload-Offset",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Starting offset of the chunk"
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["application/offset+octet-stream"]
+            }
+          },
+          {
+            "name": "Tus-Resumable",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["1.0.0"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/offset+octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Chunk uploaded successfully",
+            "headers": {
+              "Upload-Offset": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "New offset after the chunk upload"
+              },
+              "Tus-Resumable": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload offset conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete upload",
+        "description": "Terminate and clean up an upload",
+        "tags": ["Upload"],
+        "responses": {
+          "204": {
+            "description": "Upload deleted successfully",
+            "headers": {
+              "Tus-Resumable": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "summary": "Get server capabilities",
+        "description": "Retrieve the server's TUS protocol capabilities",
+        "tags": ["Upload"],
+        "responses": {
+          "204": {
+            "description": "Server capabilities retrieved successfully",
+            "headers": {
+              "Tus-Version": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Supported TUS versions"
+              },
+              "Tus-Extension": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Supported protocol extensions"
+              },
+              "Tus-Max-Size": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Maximum allowed file size"
+              },
+              "Tus-Resumable": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "statusCode": {
+            "type": "integer",
+            "description": "HTTP status code"
+          },
+          "errorCode": {
+            "type": "string",
+            "description": "Application-specific error code"
+          },
+          "details": {
+            "type": "object",
+            "description": "Additional error details"
+          }
+        },
+        "required": ["message", "statusCode", "errorCode"]
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Invalid request parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "invalidHeaders": {
+                "value": {
+                  "message": "Invalid upload request headers",
+                  "statusCode": 412,
+                  "errorCode": "INVALID_HEADERS"
+                }
+              },
+              "lengthRequired": {
+                "value": {
+                  "message": "Upload-Length or Upload-Defer-Length header required",
+                  "statusCode": 412,
+                  "errorCode": "LENGTH_REQUIRED"
+                }
+              },
+              "invalidOffset": {
+                "value": {
+                  "message": "Invalid Upload-Offset header",
+                  "statusCode": 412,
+                  "errorCode": "INVALID_OFFSET"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FileValidationError": {
+        "description": "File validation failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "invalidFileType": {
+                "value": {
+                  "message": "Invalid file type",
+                  "statusCode": 415,
+                  "errorCode": "INVALID_FILE_TYPE",
+                  "details": {
+                    "allowedTypes": [".pdf", ".doc", ".docx", ".txt", ".jpg", ".jpeg", ".png", ".mp4"]
+                  }
+                }
+              },
+              "fileSizeExceeded": {
+                "value": {
+                  "message": "File size exceeded",
+                  "statusCode": 413,
+                  "errorCode": "FILE_TOO_LARGE",
+                  "details": {
+                    "maxSize": 104857600
+                  }
+                }
+              },
+              "fileSizeBelow": {
+                "value": {
+                  "message": "File size below minimum limit",
+                  "statusCode": 413,
+                  "errorCode": "FILE_TOO_SMALL",
+                  "details": {
+                    "minSize": 1024
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RateLimitError": {
+        "description": "Rate limit exceeded",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "limitExceeded": {
+                "value": {
+                  "message": "Rate limit exceeded. Please try again later.",
+                  "statusCode": 429,
+                  "errorCode": "RATE_LIMIT_EXCEEDED",
+                  "details": {
+                    "retryAfter": 3600
+                  }
+                }
+              },
+              "blocked": {
+                "value": {
+                  "message": "Your access has been temporarily blocked due to excessive requests.",
+                  "statusCode": 429,
+                  "errorCode": "RATE_LIMIT_BLOCKED",
+                  "details": {
+                    "retryAfter": 3600
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Optional API key for authentication"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Upload",
+      "description": "File upload operations using the TUS protocol"
+    },
+    {
+      "name": "System",
+      "description": "System-related endpoints"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+---
+title: Multipart Uploads
+description: This guide explains how to handle large file uploads using S3-compatible storage with our API.
+---
+
+## Upload Process
+
+### 1. Initialize Multipart Upload
+
+```http
+POST /files
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Length: 524288000
+Upload-Metadata: filename d29ya2Zsb3cuanBn
+X-Storage-Type: s3
+```
+
+Response:
+
+```http
+HTTP/1.1 201 Created
+Location: https://your-api.example.com/files/24e533e02ec3bc40c387f1a0e460e216
+Upload-Id: 2~zYYynl91c0L.Dt1387r4d.fhx9K
+```
+
+### 2. Upload Parts
+
+Each part must be at least 5MB (except the last part).
+
+```http
+PATCH /files/24e533e02ec3bc40c387f1a0e460e216
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Offset: 0
+Content-Length: 5242880
+Upload-Part-Number: 1
+Upload-Id: 2~zYYynl91c0L.Dt1387r4d.fhx9K
+```
+
+### 3. Complete Upload
+
+After all parts are uploaded:
+
+```http
+POST /files/24e533e02ec3bc40c387f1a0e460e216/complete
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Id: 2~zYYynl91c0L.Dt1387r4d.fhx9K
+```
+
+## S3 Configuration
+
+Required S3 settings:
+
+- Bucket name
+- Region
+- Access credentials
+- Optional: Custom endpoint for S3-compatible storage
+
+## Best Practices
+
+1. Use parallel uploads for better performance
+2. Implement retry logic for failed parts
+3. Verify ETags for uploaded parts
+4. Clean up incomplete multipart uploads

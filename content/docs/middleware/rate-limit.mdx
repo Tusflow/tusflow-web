@@ -1,0 +1,240 @@
+---
+title: Rate Limiting
+description: Rate limiting middleware for protecting API endpoints from abuse.
+---
+
+# Rate Limiting Middleware
+
+The rate limiting middleware protects the API from abuse by limiting the number of requests a client can make within a specified time window.
+
+## Overview
+
+The middleware uses Redis to track and enforce rate limits across different endpoints and operations.
+
+## Configuration
+
+```typescript
+RATE_LIMIT_CONFIG = {
+    ENABLE: true,
+    KEY_PREFIX: 'ratelimit:',
+    BLOCK_DURATION: 3600, // 1 hour in seconds
+    LIMITS: {
+        POST: {
+            tokens: 50, // 50 new uploads per hour
+            interval: 3600, // 1 hour window
+        },
+        PATCH: {
+            tokens: 500, // 500 chunk uploads per hour
+            interval: 3600,
+        },
+        DEFAULT: {
+            tokens: 100, // 100 other operations per hour
+            interval: 3600,
+        },
+    },
+};
+```
+
+## Implementation
+
+The rate limiting uses a token bucket algorithm with Redis for distributed rate limiting:
+
+```typescript
+async function checkRateLimit(
+    identifier: string,
+    operation: string
+): Promise<RateLimitResult> {
+    const key = `${RATE_LIMIT_CONFIG.KEY_PREFIX}${identifier}:${operation}`;
+    const limit =
+        RATE_LIMIT_CONFIG.LIMITS[operation] || RATE_LIMIT_CONFIG.LIMITS.DEFAULT;
+
+    const [tokens, resetTime] = await redis.pipeline().get(key).ttl(key).exec();
+
+    if (tokens === null) {
+        await redis.setex(key, limit.interval, limit.tokens - 1);
+        return {
+            allowed: true,
+            remaining: limit.tokens - 1,
+            reset: Date.now() + limit.interval * 1000,
+        };
+    }
+
+    const remaining = parseInt(tokens);
+    if (remaining <= 0) {
+        return {
+            allowed: false,
+            remaining: 0,
+            reset: Date.now() + resetTime * 1000,
+        };
+    }
+
+    await redis.setex(key, resetTime, remaining - 1);
+    return {
+        allowed: true,
+        remaining: remaining - 1,
+        reset: Date.now() + resetTime * 1000,
+    };
+}
+```
+
+## Response Headers
+
+The middleware adds the following headers to responses:
+
+```typescript
+{
+  'X-RateLimit-Limit': string,     // Maximum requests allowed
+  'X-RateLimit-Remaining': string, // Remaining requests in window
+  'X-RateLimit-Reset': string      // Timestamp when limit resets
+}
+```
+
+## Error Response
+
+When rate limit is exceeded:
+
+```json
+{
+    "error": {
+        "code": "rate_limit_exceeded",
+        "message": "Too many requests, please try again later",
+        "details": {
+            "reset": "2024-01-01T00:00:00Z",
+            "limit": 50,
+            "remaining": 0
+        }
+    }
+}
+```
+
+## Integration with Authentication
+
+The rate limiting middleware works in conjunction with authentication:
+
+```typescript
+async function handleRequest(request: Request): Promise<Response> {
+    const user = await authenticate(request);
+    const rateLimit = await checkRateLimit(user.id, request.method);
+
+    if (!rateLimit.allowed) {
+        throw new RateLimitError(rateLimit);
+    }
+
+    const response = await processRequest(request);
+    addRateLimitHeaders(response, rateLimit);
+    return response;
+}
+```
+
+## Monitoring and Alerts
+
+The middleware includes monitoring capabilities:
+
+```typescript
+async function monitorRateLimits(): Promise<void> {
+    const metrics = await redis.scan(
+        0,
+        'MATCH',
+        `${RATE_LIMIT_CONFIG.KEY_PREFIX}*`
+    );
+
+    for (const key of metrics) {
+        const [remaining] = await redis.get(key);
+        if (parseInt(remaining) < ALERT_THRESHOLD) {
+            await sendAlert({
+                type: 'rate_limit_warning',
+                key,
+                remaining,
+            });
+        }
+    }
+}
+```
+
+## Best Practices
+
+1. **Rate Limit Design**
+
+    - Set appropriate limits based on endpoint impact
+    - Consider different limits for authenticated vs anonymous users
+    - Implement graduated rate limiting
+
+2. **Error Handling**
+
+    - Return clear error messages
+    - Include retry-after headers
+    - Log rate limit violations
+
+3. **Monitoring**
+
+    - Track rate limit hits and near-misses
+    - Set up alerts for abuse patterns
+    - Monitor Redis performance
+
+4. **Client Guidelines**
+    - Implement exponential backoff
+    - Cache rate limit state
+    - Handle rate limit errors gracefully
+
+## Example Usage
+
+Client-side handling of rate limits:
+
+```typescript
+async function uploadWithRateLimit(chunk: Blob): Promise<void> {
+    try {
+        const response = await fetch('/upload', {
+            method: 'PATCH',
+            body: chunk,
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (response.status === 429) {
+            const reset = response.headers.get('X-RateLimit-Reset');
+            const delay = calculateBackoff(reset);
+            await sleep(delay);
+            return uploadWithRateLimit(chunk);
+        }
+
+        return response;
+    } catch (error) {
+        handleError(error);
+    }
+}
+```
+
+## Testing
+
+Example tests for the rate limiting middleware:
+
+```typescript
+describe('Rate Limiting Middleware', () => {
+    it('should allow requests within limit', async () => {
+        const response = await makeRequest();
+        expect(response.status).toBe(200);
+        expect(response.headers.get('X-RateLimit-Remaining')).toBe('49');
+    });
+
+    it('should block requests over limit', async () => {
+        // Make 51 requests
+        for (let i = 0; i < 51; i++) {
+            await makeRequest();
+        }
+
+        const response = await makeRequest();
+        expect(response.status).toBe(429);
+        expect(response.headers.get('X-RateLimit-Remaining')).toBe('0');
+    });
+
+    it('should reset limits after window', async () => {
+        // Wait for rate limit window to expire
+        await sleep(3600 * 1000);
+
+        const response = await makeRequest();
+        expect(response.status).toBe(200);
+        expect(response.headers.get('X-RateLimit-Remaining')).toBe('49');
+    });
+});
+```

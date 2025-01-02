@@ -1,0 +1,67 @@
+---
+title: Resumable Uploads
+description: Resumable uploads allow clients to pause and resume file uploads, making the process more resilient to network issues and providing a better user experience.
+---
+
+## Starting an Upload
+
+To initiate a resumable upload:
+
+```http
+POST /files
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Length: 100000000
+Content-Type: application/offset+octet-stream
+```
+
+Response:
+
+```http
+HTTP/1.1 201 Created
+Location: https://your-api.example.com/files/24e533e02ec3bc40c387f1a0e460e216
+Tus-Resumable: 1.0.0
+```
+
+## Pausing an Upload
+
+The upload can be paused at any time. The client should keep track of the upload URL and the number of bytes uploaded.
+
+## Resuming an Upload
+
+To resume an upload, send a HEAD request to get the current offset:
+
+```http
+HEAD /files/24e533e02ec3bc40c387f1a0e460e216
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+```
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Upload-Offset: 50000000
+Tus-Resumable: 1.0.0
+```
+
+Then continue uploading from the offset:
+
+```http
+PATCH /files/24e533e02ec3bc40c387f1a0e460e216
+Host: your-api.example.com
+Tus-Resumable: 1.0.0
+Upload-Offset: 50000000
+Content-Type: application/offset+octet-stream
+Content-Length: 10000000
+
+[BINARY DATA]
+```
+
+## Error Handling
+
+If a connection is lost during upload:
+
+1. Client can retrieve the last successful offset using HEAD request
+2. Resume upload from that offset using PATCH request
+3. No data needs to be re-uploaded

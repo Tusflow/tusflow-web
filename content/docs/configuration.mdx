@@ -1,0 +1,211 @@
+---
+title: Configuration
+description: A step-by-step guide to configure the TusFlow Upload API.
+---
+
+## Environment Variables
+
+### Required Variables
+
+Configure these in your `wrangler.toml` or environment:
+
+```toml
+[vars]
+# S3 Storage Configuration
+AWS_REGION = "your-region"
+AWS_KEY = "your-access-key"
+AWS_SECRET = "your-secret-key"
+AWS_ENDPOINT = "your-s3-endpoint"
+AWS_BUCKET = "your-bucket-name"
+
+# Redis Configuration (for rate limiting)
+UPSTASH_REDIS_REST_URL = "your-redis-url"
+UPSTASH_REDIS_REST_TOKEN = "your-redis-token"
+
+# Monitoring (optional)
+BASELIME_API_KEY = "your-api-key"
+SERVICE_NAME = "your-service-name"
+```
+
+## Upload Configuration
+
+### Chunk Management
+
+```typescript
+CHUNK_SIZE: {
+    MIN: 5 * 1024 * 1024,    // 5MB minimum chunk size
+    MAX: 50 * 1024 * 1024,   // 50MB maximum chunk size
+    TARGET_UPLOAD_TIME: 1     // Target time in seconds for chunk upload
+}
+```
+
+### Retry Logic
+
+```typescript
+RETRY: {
+    MAX_ATTEMPTS: 3,    // Maximum retry attempts
+    DELAY: 500         // Base delay in milliseconds (uses exponential backoff)
+}
+```
+
+### Circuit Breaker
+
+```typescript
+CIRCUIT_BREAKER: {
+    TIMEOUT: 120000,         // 120 seconds operation timeout
+    FAILURE_THRESHOLD: 5,    // Number of failures before circuit opens
+    RESET_TIMEOUT: 5000      // 5 seconds before attempting reset
+}
+```
+
+### Upload Settings
+
+```typescript
+UPLOAD: {
+    INCOMPLETE_TTL: 24 * 60 * 60,  // 24 hours TTL for incomplete uploads
+    MAX_PARTS: 10000,              // Maximum number of parts in multipart upload
+    TIMEOUT: 30000                 // 30 seconds timeout per request
+}
+```
+
+### Parallel Uploads
+
+```typescript
+PARALLEL_UPLOADS: {
+    MAX_CONCURRENT: 10,  // Maximum concurrent uploads
+    BATCH_SIZE: 5       // Number of chunks to upload in parallel
+}
+```
+
+## File Validation
+
+### File Types and Sizes
+
+```typescript
+FILE_VALIDATION: {
+    ENABLE_TYPE_VALIDATION: true,
+    ALLOWED_FILE_TYPES: [
+        '.pdf',
+        '.doc',
+        '.docx',
+        '.txt',
+        '.jpg',
+        '.jpeg',
+        '.png'
+    ],
+    MAX_FILE_SIZE: 100 * 1024 * 1024,  // 100MB maximum file size
+    MIN_FILE_SIZE: 1024                 // 1KB minimum file size
+}
+```
+
+## Rate Limiting
+
+### Rate Limit Configuration
+
+```typescript
+RATE_LIMIT: {
+    ENABLE: true,
+    KEY_PREFIX: 'ratelimit:',
+    BLOCK_DURATION: 60 * 60,  // 1 hour block duration
+    LIMITS: {
+        POST: {
+            tokens: 50,      // 50 new uploads per hour
+            interval: 3600   // 1 hour window
+        },
+        PATCH: {
+            tokens: 500,     // 500 chunk uploads per hour
+            interval: 3600
+        },
+        DEFAULT: {
+            tokens: 100,     // 100 other operations per hour
+            interval: 3600
+        }
+    }
+}
+```
+
+## Caching Configuration
+
+### Cache Policies
+
+```typescript
+CACHE: {
+    WARM_TTL: 3600,           // 1 hour cache TTL
+    WARM_THRESHOLD: 100,      // Access count to trigger cache warming
+    WARM_INTERVAL: 900        // 15 minutes between cache warm cycles
+}
+
+CACHE_POLICIES: {
+    STATIC: {
+        maxAge: 31536000,          // 1 year
+        staleWhileRevalidate: 86400 // 1 day
+    },
+    DYNAMIC: {
+        maxAge: 3600,              // 1 hour
+        staleWhileRevalidate: 300, // 5 minutes
+        mustRevalidate: true
+    },
+    FREQUENTLY_ACCESSED: {
+        maxAge: 86400,             // 1 day
+        staleWhileRevalidate: 3600 // 1 hour
+    }
+}
+```
+
+## HTTP Configuration
+
+```typescript
+HTTP: {
+    VERSION: '3',           // HTTP version
+    EARLY_HINTS: true,     // Enable HTTP 103 Early Hints
+    ENABLE_QUIC: true      // Enable QUIC protocol
+}
+```
+
+## Customizing Configuration
+
+### Using Environment Variables
+
+1. Local Development:
+
+```bash
+# Create .dev.vars file
+cp .dev.vars.example .dev.vars
+# Edit variables
+nano .dev.vars
+```
+
+### Using wrangler.toml
+
+1. Development Environment:
+
+```toml
+[env.development]
+vars = { ... }
+```
+
+2. Production Environment:
+
+```toml
+[env.production]
+vars = { ... }
+```
+
+## Best Practices
+
+1. **Security**:
+
+    - Never commit sensitive credentials to version control
+    - Use environment-specific configurations
+    - Rotate access keys regularly
+
+2. **Performance**:
+
+    - Adjust chunk sizes based on your network conditions
+    - Configure cache policies based on access patterns
+    - Monitor and adjust rate limits based on usage
+
+3. **Reliability**:
+    - Set appropriate retry and timeout values
+    - Configure circuit breaker thresholds based on error rates
+    - Implement proper cleanup for incomplete uploads

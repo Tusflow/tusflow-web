@@ -1,0 +1,13 @@
+{
+    "title": "Tusflow Documentation",
+    "description": "A comprehensive guide to using the TusFlow Upload API.",
+    "root": true,
+    "pages": [
+        "index",
+        "getting-started",
+        "configuration",
+        "features",
+        "middleware",
+        "api-reference"
+    ]
+}
