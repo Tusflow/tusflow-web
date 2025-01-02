@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -28,7 +28,7 @@ jobs:
           bun-version: latest
 
       - name: Restore cache
-        uses: actions/cache@v4
+        uses: useblacksmith/cache@v5
         with:
           path: |
             .next/cache
