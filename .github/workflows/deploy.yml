@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-8vcpu-ubuntu-2204
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
