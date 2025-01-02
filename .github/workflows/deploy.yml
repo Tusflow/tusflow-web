@@ -2,37 +2,45 @@ name: Deploy to Vercel
 
 on:
   push:
-    branches:
-      - main
+    branches: ['main']
   pull_request:
-    branches:
-      - main
+    branches: ['main']
+  workflow_dispatch:
+
+# Allow only one concurrent deployment
+concurrency:
+  group: 'vercel'
+  cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: '20'
+          bun-version: latest
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
 
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install --legacy-peer-deps
-          fi
+        run: bun install
 
       - name: Install Vercel CLI
-        run: npm install -g vercel
+        run: bun add -g vercel@latest
 
       - name: Pull Vercel environment variables
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
