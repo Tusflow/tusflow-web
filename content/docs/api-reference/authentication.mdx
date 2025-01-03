@@ -1,0 +1,144 @@
+---
+title: "Authentication"
+description: "Learn how to secure your API requests with TusFlow authentication"
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Overview
+
+TusFlow uses API keys for authentication, managed through Unkey. All requests to protected endpoints must include a valid API key.
+
+<Callout type="warning">
+  Never expose your API keys in client-side code. Always make requests through a secure backend.
+</Callout>
+
+## Authentication Header
+
+All requests must include the API key in the Authorization header:
+
+```http
+Authorization: Bearer <your-api-key>
+```
+
+## API Key Management
+
+<Steps>
+  ### Generate API Key
+  Create a new API key through your TusFlow dashboard or using the Unkey API.
+
+  ### Configure Permissions
+  Set appropriate permissions and rate limits for your API key.
+
+  ### Secure Storage
+  Store your API key securely using environment variables or a secrets manager.
+
+  ### Regular Rotation
+  Rotate your API keys regularly for enhanced security.
+</Steps>
+
+## Request Examples
+
+<Tabs items={["cURL", "JavaScript", "Python"]}>
+  ```bash tab
+  curl -X POST https://api.tusflow.dev/files \
+    -H "Authorization: Bearer your-api-key" \
+    -H "Tus-Resumable: 1.0.0" \
+    -H "Upload-Length: 1048576"
+  ```
+
+  ```typescript tab
+  const response = await fetch('https://api.tusflow.dev/files', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Tus-Resumable': '1.0.0',
+      'Upload-Length': '1048576'
+    }
+  });
+  ```
+
+  ```python tab
+  import requests
+
+  headers = {
+      'Authorization': f'Bearer {api_key}',
+      'Tus-Resumable': '1.0.0',
+      'Upload-Length': '1048576'
+  }
+
+  response = requests.post(
+      'https://api.tusflow.dev/files',
+      headers=headers
+  )
+  ```
+</Tabs>
+
+## Error Responses
+
+Authentication errors return standard HTTP status codes:
+
+| Status | Code | Description |
+|--------|------|-------------|
+| 401 | unauthorized | Missing or invalid API key |
+| 403 | forbidden | Insufficient permissions |
+| 429 | rate_limit_exceeded | Rate limit exceeded |
+
+Example error response:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid API key provided",
+    "details": {
+      "header": "Authorization"
+    }
+  }
+}
+```
+
+## Security Best Practices
+
+1. **API Key Protection**
+   - Never expose keys in client-side code
+   - Use environment variables
+   - Implement key rotation
+   - Monitor key usage
+
+2. **Request Security**
+   - Use HTTPS only
+   - Validate response signatures
+   - Implement request timeouts
+   - Handle errors gracefully
+
+3. **Access Control**
+   - Use minimum required permissions
+   - Implement IP allowlisting
+   - Set appropriate rate limits
+   - Monitor API usage
+
+<Callout type="info">
+  For production deployments, consider implementing additional security measures like JWT tokens or OAuth 2.0.
+</Callout>
+
+## Configuration
+
+Configure authentication settings in your `wrangler.toml`:
+
+```toml
+[vars]
+UNKEY_API_ID = "your-unkey-api-id"
+INTERNAL_API_KEY = "your-internal-key"
+```
+
+## Rate Limits
+
+Authenticated requests have higher rate limits:
+
+- **Unauthenticated**: 100 requests/minute per IP
+- **Authenticated**: 1000 requests/minute per API key
+
+See [Rate Limits](/docs/api-reference/rate-limits) for more details. 

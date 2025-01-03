@@ -1,0 +1,106 @@
+---
+title: Storage Integration
+description: Connect TusFlow to any AWS S3-compatible storage service
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Overview
+
+TusFlow supports integration with any AWS S3-compatible storage service, including Cloudflare R2, Tigris, and others. This flexibility allows you to choose the best storage solution for your needs.
+
+## Supported Storage Services
+
+- **AWS S3**: The original and most widely used object storage service.
+- **Cloudflare R2**: A cost-effective alternative with no egress fees.
+- **Tigris**: A scalable and performant storage solution.
+- **Other S3-Compatible Services**: Any service that supports the S3 API.
+
+## Configuration
+
+To connect TusFlow to your chosen storage service, configure the following environment variables in your `wrangler.toml` file:
+
+```toml
+[vars]
+AWS_REGION = "your-region"
+AWS_ACCESS_KEY_ID = "your-access-key-id"
+AWS_SECRET_ACCESS_KEY = "your-secret-access-key"
+AWS_ENDPOINT = "your-storage-endpoint"
+AWS_BUCKET_NAME = "your-bucket-name"
+```
+
+### Example Configuration
+
+#### AWS S3
+
+```toml
+[vars]
+AWS_REGION = "us-east-1"
+AWS_ACCESS_KEY_ID = "your-aws-access-key-id"
+AWS_SECRET_ACCESS_KEY = "your-aws-secret-access-key"
+AWS_ENDPOINT = "https://s3.amazonaws.com"
+AWS_BUCKET_NAME = "your-s3-bucket-name"
+```
+
+#### Cloudflare R2
+
+```toml
+[vars]
+AWS_REGION = "auto"
+AWS_ACCESS_KEY_ID = "your-r2-access-key-id"
+AWS_SECRET_ACCESS_KEY = "your-r2-secret-access-key"
+AWS_ENDPOINT = "https://<account-id>.r2.cloudflarestorage.com"
+AWS_BUCKET_NAME = "your-r2-bucket-name"
+```
+
+#### Tigris
+
+```toml
+[vars]
+AWS_REGION = "your-region"
+AWS_ACCESS_KEY_ID = "your-tigris-access-key-id"
+AWS_SECRET_ACCESS_KEY = "your-tigris-secret-access-key"
+AWS_ENDPOINT = "https://<account-id>.tigrisdata.com"
+AWS_BUCKET_NAME = "your-tigris-bucket-name"
+```
+
+## Implementation Details
+
+TusFlow uses the AWS SDK to interact with S3-compatible storage services. The following code snippet demonstrates how to initialize the S3 client:
+
+```typescript
+import { S3Client } from '@aws-sdk/client-s3';
+
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    endpoint: process.env.AWS_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+    forcePathStyle: true, // Required for some S3-compatible services
+});
+```
+
+## Best Practices
+
+1. **Security**
+   - Use IAM roles and policies to restrict access
+   - Rotate access keys regularly
+   - Use environment variables to store sensitive information
+
+2. **Performance**
+   - Choose the closest region to your users
+   - Enable transfer acceleration if supported
+   - Monitor storage usage and costs
+
+3. **Reliability**
+   - Enable versioning for data protection
+   - Use lifecycle policies to manage data retention
+   - Implement backup and disaster recovery plans
+
+<Callout type="info">
+  Ensure your storage service is configured correctly to handle large file uploads and resumable transfers.
+</Callout> 

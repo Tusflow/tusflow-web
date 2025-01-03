@@ -1,35 +1,93 @@
 ---
 title: Introduction
-description: The Tusflow API is a powerful implementation of the TUS (Tus Upload Server) protocol, designed to handle resumable file uploads efficiently in modern web applications.
+description: TusFlow is an open-source, high-performance implementation of the TUS (resumable upload) protocol built on Cloudflare Workers. It provides enterprise-grade file upload infrastructure with built-in support for resumable uploads, chunking, and advanced security features.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Cards, Card } from 'fumadocs-ui/components/card'
+import { FileText, Upload, Shield, Zap } from 'lucide-react'
+
+
 
 ## Key Features
 
-- **Resumable Uploads**: Pause and resume file uploads without data loss
-- **Chunk Management**: Efficient handling of large files through chunked uploads
-- **S3 Integration**: Direct integration with S3-compatible storage
-- **File Validation**: Built-in support for file validation and integrity checks
-- **Redis Caching**: Fast metadata storage and retrieval using Upstash Redis and also supports rate limiting
-- **Cloudflare Workers**: Leverages edge computing for optimal performance
+<Cards>
+  <Card
+    title="Resumable Uploads"
+    description="Built-in support for pause, resume and automatic recovery of uploads"
+    icon={<Upload className="w-6 h-6" />}
+    href="/docs/features/resumable-uploads"
+  />
+  <Card
+    title="Edge Computing"
+    description="Powered by Cloudflare Workers for optimal global performance"
+    icon={<Zap className="w-6 h-6" />}
+    href="/docs/features/edge-computing"
+  />
+  <Card
+    title="Enterprise Security"
+    description="Advanced file validation, malware scanning and access controls"
+    icon={<Shield className="w-6 h-6" />}
+    href="/docs/features/security"
+  />
+  <Card
+    title="Developer First"
+    description="Comprehensive API documentation and client SDKs"
+    icon={<FileText className="w-6 h-6" />}
+    href="/docs/api-reference"
+  />
+</Cards>
 
-## Supported Use Cases
+## Quick Links
 
-- Large file uploads in web applications
-- Media file processing and storage
-- Document management systems
-- Cloud storage integration
-- Content delivery networks
+<Cards>
+  <Card
+    title="Getting Started"
+    description="Quick start guide to integrate TusFlow into your application"
+    href="/docs/getting-started"
+  />
+  <Card
+    title="API Reference" 
+    description="Complete API documentation and endpoint references"
+    href="/docs/api-reference"
+  />
+  <Card
+    title="Configuration"
+    description="Learn how to configure and customize TusFlow"
+    href="/docs/configuration"
+  />
+  <Card
+    title="Middleware"
+    description="Authentication, rate limiting and other middleware options"
+    href="/docs/middleware"
+  />
+</Cards>
 
-## Benefits for Developers
+## Why TusFlow?
 
-- **Reliability**: Robust error handling and recovery mechanisms
-- **Scalability**: Built on Cloudflare's global network
-- **Flexibility**: Multiple storage backend options
-- **Performance**: Optimized for speed and efficiency
-- **Security**: Built-in security features and validations
+- **High Performance**: Built on Cloudflare's global edge network
+- **Developer Experience**: Simple integration with comprehensive documentation
+- **Enterprise Ready**: Production-grade security and reliability features
+- **Open Source**: MIT licensed and community driven
+- **Protocol Compliant**: Full TUS v1.0.0 protocol implementation
 
-## Protocol Compliance
+## Installation
 
-This API implements the TUS protocol version 1.0.0, ensuring compatibility with TUS clients and providing a standardized approach to resumable file uploads.
+```bash
+# Clone the repository
+git clone https://github.com/Tusflow/tusflow-api
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp wrangler.toml.example wrangler.toml
+
+# Deploy to Cloudflare Workers
+npm run deploy
+```
+
+## Community
+
+- [GitHub Repository](https://github.com/evansso/tusflow-api)
+- [Report Issues](https://github.com/evansso/tusflow-api/issues)
+- [Contributing Guide](https://github.com/evansso/tusflow-api/blob/main/CONTRIBUTING.md)

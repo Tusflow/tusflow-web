@@ -1,24 +1,86 @@
 ---
 title: Features
-description: A comprehensive overview of the features provided by our API.
+description: Explore TusFlow's powerful features for handling file uploads at scale
 ---
 
+import { Cards, Card } from 'fumadocs-ui/components/card'
+import { Upload, Zap, Shield, Server, FileCheck, Database, Gauge } from 'lucide-react'
+
+## Core Features
+
 <Cards>
-    <Card title="Resumable Uploads" href="/docs/features/resumable-uploads">
-        Resumable uploads allow clients to pause and resume file uploads, making
-        the process more resilient to network issues and providing a better user
-        experience.
-    </Card>
-    <Card title="Multipart Uploads" href="/docs/features/multipart-uploads">
-        Multipart uploads are a common method for uploading large files,
-        allowing for parallelization and faster transfer times.
-    </Card>
-    <Card title="Chunk Management" href="/docs/features/chunk-management">
-        Our API implements intelligent chunking to optimize file uploads based
-        on network conditions and file size.
-    </Card>
-    <Card title="File Validation" href="/docs/features/validation">
-        We support various file validation methods to ensure the integrity of
-        uploaded files.
-    </Card>
+  <Card
+    title="Resumable Uploads"
+    description="Pause, resume and automatically recover uploads with zero data loss"
+    icon={<Upload className="w-6 h-6" />}
+    href="/docs/features/resumable-uploads"
+  />
+  <Card
+    title="Chunk Management"
+    description="Smart file chunking with parallel uploads and automatic optimization"
+    icon={<FileCheck className="w-6 h-6" />}
+    href="/docs/features/chunk-management"
+  />
+  <Card
+    title="Edge Computing"
+    description="Global edge network powered by Cloudflare Workers"
+    icon={<Zap className="w-6 h-6" />}
+    href="/docs/features/edge-computing"
+  />
+  <Card
+    title="Storage Integration"
+    description="Direct integration with S3-compatible storage services"
+    icon={<Database className="w-6 h-6" />}
+    href="/docs/features/storage"
+  />
+  <Card
+    title="Security"
+    description="Enterprise-grade security with file validation and access control"
+    icon={<Shield className="w-6 h-6" />}
+    href="/docs/features/security"
+  />
+  <Card
+    title="Performance"
+    description="Optimized for speed with caching and parallel processing"
+    icon={<Server className="w-6 h-6" />}
+    href="/docs/features/performance"
+  />
+  <Card
+    title="File Validation"
+    description="Comprehensive file validation with size limits, type checking and malware scanning"
+    icon={<FileCheck className="w-6 h-6" />}
+    href="/docs/features/file-validation"
+  />
+  <Card
+    title="Observability"
+    description="Monitor API health and performance with built-in observability features"
+    icon={<Gauge className="w-6 h-6" />}
+    href="/docs/features/observability"
+  />
 </Cards>
+
+## Feature Highlights
+
+### Resumable Uploads
+- Automatic pause and resume
+- Network failure recovery
+- Progress tracking
+- Bandwidth optimization
+
+### Smart Chunking
+- Dynamic chunk sizing
+- Parallel upload processing
+- Memory-efficient handling
+- Automatic retries
+
+### Edge-Powered
+- Global CDN distribution
+- Low-latency processing
+- Automatic scaling
+- HTTP/3 and QUIC support
+
+### Enterprise Security
+- File type validation
+- Malware scanning
+- Access control
+- Rate limiting

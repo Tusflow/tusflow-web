@@ -1,0 +1,103 @@
+---
+title: Edge Computing
+description: Learn how TusFlow leverages Cloudflare Workers for global edge processing
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Overview
+
+TusFlow runs on Cloudflare's global network of data centers, bringing file processing closer to your users for faster uploads and better reliability.
+
+<Callout type="info">
+  Files are processed at the edge, reducing latency and improving upload speeds by up to 30%.
+</Callout>
+
+## Key Benefits
+
+<Steps>
+  ### Global Distribution
+  Your uploads are processed at the nearest edge location, reducing latency and improving speeds.
+
+  ### Automatic Scaling
+  The platform automatically scales based on demand, handling any number of concurrent uploads.
+
+  ### HTTP/3 Support
+  Modern protocol support including HTTP/3 and QUIC for faster, more reliable transfers.
+
+  ### Real-time Processing
+  Process uploads in real-time at the edge without routing through a central server.
+</Steps>
+
+## Features
+
+### Network Optimization
+- Automatic routing optimization
+- Connection multiplexing
+- Protocol negotiation
+- Smart retries
+
+### Performance
+- Sub-millisecond cold starts
+- Automatic caching
+- Memory optimization
+- Concurrent processing
+
+### Reliability
+- Global redundancy
+- Automatic failover
+- DDoS protection
+- Always-on availability
+
+## Configuration
+
+<Tabs items={["Basic", "Advanced"]}>
+  ```typescript tab
+  // Basic edge configuration
+  const config = {
+    region: 'auto',
+    caching: true,
+    http3: true
+  }
+  ```
+
+  ```typescript tab
+  // Advanced edge configuration
+  const config = {
+    edge: {
+      regions: ['auto'],
+      cacheTtl: 3600,
+      protocols: ['h3', 'h2', 'http/1.1'],
+      concurrency: 10000
+    },
+    optimization: {
+      memorySizeLimit: '128MB',
+      timeoutSeconds: 30,
+      retryAttempts: 3
+    }
+  }
+  ```
+</Tabs>
+
+## Best Practices
+
+<Callout type="warning">
+  While edge computing provides significant benefits, it's important to optimize your uploads for edge processing to get the best performance.
+</Callout>
+
+1. **Chunk Size Optimization**
+   - Use appropriate chunk sizes
+   - Consider edge memory limits
+   - Enable parallel processing
+
+2. **Caching Strategy**
+   - Cache upload metadata
+   - Use appropriate TTLs
+   - Implement cache warming
+
+3. **Error Handling**
+   - Implement graceful degradation
+   - Use appropriate timeouts
+   - Handle edge failures 

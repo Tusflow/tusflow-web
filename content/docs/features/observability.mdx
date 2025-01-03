@@ -1,0 +1,202 @@
+---
+title: Observability
+description: Monitor your TusFlow API health and performance with built-in observability features
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Overview
+
+TusFlow provides comprehensive observability through health checks and integrations with monitoring services like BetterStack and OpenStatus. Monitor your API's health, track performance metrics, and get alerted about issues.
+
+## Health Check Endpoint
+
+The `/health` endpoint provides real-time status of all critical services:
+
+```typescript
+GET /health
+
+// Response 200 OK
+{
+  "status": "ok"
+}
+
+// Response 503 Service Unavailable
+{
+  "status": "error"
+}
+
+Headers:
+  X-Health-Check: ok | error
+  X-Response-Time: latency_ms
+  User-Agent: OpenStatus/1.0
+```
+
+The health check:
+1. Verifies S3 connectivity
+2. Validates Redis connection
+3. Measures response latency
+4. Returns detailed status headers
+
+## BetterStack Integration
+
+Monitor your TusFlow API with BetterStack's comprehensive observability platform:
+
+<Steps>
+  ### Configure BetterStack
+  1. Create a BetterStack account
+  2. Add a new monitor in BetterStack dashboard
+  3. Select "HTTP" monitor type
+  4. Enter your TusFlow health endpoint URL
+
+  ### Set Up Alerts
+  1. Configure notification channels (email, Slack, etc.)
+  2. Set alert thresholds
+  3. Define escalation policies
+  4. Add team members
+
+  ### Monitor Metrics
+  - Response times
+  - Error rates
+  - Availability percentage
+  - Service dependencies
+</Steps>
+
+Example BetterStack configuration:
+
+```typescript
+// BetterStack Monitor Settings
+{
+  "name": "TusFlow API Health",
+  "url": "https://api.tusflow.dev/health",
+  "check_frequency": 30,
+  "regions": ["us", "eu", "asia"],
+  "alert_threshold": {
+    "response_time": 1000,
+    "status_code": [200]
+  }
+}
+```
+
+## OpenStatus Integration
+
+Monitor your API status with OpenStatus's synthetic monitoring:
+
+<Steps>
+  ### Create Monitor
+  1. Sign up for OpenStatus
+  2. Create a new HTTP monitor
+  3. Configure health check endpoint
+  4. Set check frequency
+
+  ### Configure Assertions
+  1. Status code should be 200
+  2. Response should contain `{"status": "ok"}`
+  3. Response time under threshold
+  4. Headers present and valid
+
+  ### Set Up Status Page
+  1. Create public status page
+  2. Add monitor to status page
+  3. Configure incident alerts
+  4. Share status page URL
+</Steps>
+
+Example OpenStatus configuration:
+
+```typescript
+// OpenStatus Monitor Settings
+{
+  "name": "TusFlow API",
+  "url": "https://api.tusflow.dev/health",
+  "method": "GET",
+  "frequency": "1m",
+  "regions": ["iad", "sfo", "fra"],
+  "assertions": [
+    {
+      "type": "statusCode",
+      "value": 200
+    },
+    {
+      "type": "body",
+      "value": "status",
+      "operator": "contains"
+    }
+  ]
+}
+```
+
+## Implementation Details
+
+The health check endpoint implementation:
+
+```typescript
+app.get('/health', async (c) => {
+    const startTime = performance.now();
+
+    try {
+        // Initialize clients
+        const s3Client = new S3Client({
+            region: c.env.AWS_REGION,
+            endpoint: c.env.AWS_ENDPOINT,
+            credentials: {
+                accessKeyId: c.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: c.env.AWS_SECRET_ACCESS_KEY,
+            },
+            forcePathStyle: true,
+        });
+
+        const redis = new Redis({
+            url: c.env.UPSTASH_REDIS_REST_URL,
+            token: c.env.UPSTASH_REDIS_REST_TOKEN,
+        });
+
+        // Check services health in parallel
+        const [s3Health, redisHealth] = await Promise.all([
+            checkS3Health(s3Client),
+            checkRedisHealth(redis),
+        ]);
+
+        const latency = Math.round(performance.now() - startTime);
+
+        // Set response headers
+        c.header('X-Health-Check', s3Health && redisHealth ? 'ok' : 'error');
+        c.header('X-Response-Time', `${latency}ms`);
+        c.header('User-Agent', 'OpenStatus/1.0');
+
+        return c.json({ 
+            status: s3Health && redisHealth ? 'ok' : 'error' 
+        }, s3Health && redisHealth ? 200 : 503);
+    } catch (error) {
+        c.header('X-Health-Check', 'error');
+        c.header('X-Response-Time', '0ms');
+        return c.json({ status: 'error' }, 503);
+    }
+});
+```
+
+## Best Practices
+
+1. **Monitoring Setup**
+   - Monitor from multiple regions
+   - Set appropriate check frequencies
+   - Configure meaningful thresholds
+   - Enable incident alerts
+
+2. **Health Checks**
+   - Keep checks lightweight
+   - Include critical dependencies
+   - Set reasonable timeouts
+   - Monitor response times
+
+3. **Alerting**
+   - Define clear escalation policies
+   - Set up redundant notifications
+   - Configure maintenance windows
+   - Document incident responses
+
+<Callout type="info">
+  Regular health checks and monitoring are essential for maintaining high availability and quickly responding to issues.
+</Callout> 

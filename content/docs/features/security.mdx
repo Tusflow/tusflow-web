@@ -1,0 +1,138 @@
+---
+title: Security
+description: Enterprise-grade security features for protecting your file uploads
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Overview
+
+TusFlow implements comprehensive security measures to protect your file uploads from common threats and vulnerabilities.
+
+<Callout type="info">
+  All security features are enabled by default and can be customized to meet your specific requirements.
+</Callout>
+
+## Security Features
+
+<Steps>
+  ### File Validation
+  Comprehensive file validation including type checking, size limits, and content verification.
+
+  ### Access Control
+  Granular access control with API keys, JWT tokens, and role-based permissions.
+
+  ### Malware Protection
+  Real-time malware scanning and quarantine of suspicious files.
+
+  ### Rate Limiting
+  Protect against abuse with configurable rate limits and automatic blocking.
+</Steps>
+
+## Configuration
+
+<Tabs items={["Basic", "Advanced"]}>
+  ```typescript tab
+  // Basic security configuration
+  const config = {
+    maxFileSize: '5GB',
+    allowedTypes: ['image/*', 'application/pdf'],
+    enableMalwareScan: true,
+    rateLimit: 100
+  }
+  ```
+
+  ```typescript tab
+  // Advanced security configuration
+  const config = {
+    validation: {
+      maxSize: 5 * 1024 * 1024 * 1024,
+      allowedMimeTypes: ['image/*', 'application/pdf'],
+      maxChunks: 10000,
+      checksumAlgorithm: 'sha256'
+    },
+    malware: {
+      enabled: true,
+      action: 'quarantine',
+      scanTimeout: 30,
+      reportUrl: 'https://security.example.com/report'
+    },
+    rateLimit: {
+      requests: 100,
+      window: '1h',
+      blockDuration: '24h'
+    },
+    auth: {
+      type: 'jwt',
+      expiry: '1h',
+      refreshToken: true
+    }
+  }
+  ```
+</Tabs>
+
+## File Validation
+
+### Type Checking
+- MIME type validation
+- File extension verification
+- Content analysis
+- Magic number checking
+
+### Size Limits
+- Maximum file size
+- Minimum file size
+- Chunk size limits
+- Total upload limits
+
+### Content Verification
+- Checksum validation
+- Format verification
+- Metadata validation
+- Structure analysis
+
+## Access Control
+
+<Callout type="warning">
+  Always use strong authentication and implement the principle of least privilege when granting access to upload endpoints.
+</Callout>
+
+### Authentication Methods
+- API keys
+- JWT tokens
+- OAuth 2.0
+- Custom auth
+
+### Authorization
+- Role-based access
+- Upload permissions
+- Resource limits
+- IP restrictions
+
+## Best Practices
+
+1. **File Validation**
+   - Validate before processing
+   - Implement strict type checking
+   - Set appropriate size limits
+   - Verify file integrity
+
+2. **Access Control**
+   - Use strong authentication
+   - Implement rate limiting
+   - Monitor access patterns
+   - Regular key rotation
+
+3. **Malware Protection**
+   - Enable real-time scanning
+   - Implement quarantine
+   - Set up notifications
+   - Regular updates
+
+4. **Monitoring**
+   - Track security events
+   - Monitor rate limits
+   - Alert on violations
+   - Regular audits 

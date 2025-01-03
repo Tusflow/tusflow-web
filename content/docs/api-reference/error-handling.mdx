@@ -1,0 +1,124 @@
+---
+title: Error Handling
+description: Comprehensive guide to handling TusFlow API errors
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Error Format
+
+All API errors follow a standard JSON format:
+
+```json
+{
+  "error": {
+    "code": "error_code",
+    "message": "Human readable error message",
+    "details": {
+      "field": "Additional error context"
+    }
+  }
+}
+```
+
+## Error Categories
+
+### Authentication Errors (4xx)
+
+| Code | Status | Description | Solution |
+|------|--------|-------------|-----------|
+| `unauthorized` | 401 | Missing/invalid token | Check API key |
+| `forbidden` | 403 | Insufficient permissions | Verify permissions |
+
+### Upload Errors (4xx)
+
+| Code | Status | Description | Solution |
+|------|--------|-------------|-----------|
+| `file_too_large` | 413 | File exceeds limit | Check size limits |
+| `invalid_offset` | 409 | Offset mismatch | Verify current offset |
+| `checksum_mismatch` | 460 | Verification failed | Re-upload chunk |
+
+### Server Errors (5xx)
+
+| Code | Status | Description | Solution |
+|------|--------|-------------|-----------|
+| `server_error` | 500 | Internal error | Retry after delay |
+| `storage_error` | 507 | Storage exceeded | Contact support |
+
+## Handling Errors
+
+<Tabs items={["TypeScript", "Python", "Go"]}>
+  ```typescript tab
+  try {
+    await uploadFile(file);
+  } catch (error) {
+    switch (error.code) {
+      case 'file_too_large':
+        showFileSizeError(error.message);
+        break;
+      case 'invalid_offset':
+        const currentOffset = await getCurrentOffset();
+        resumeUpload(currentOffset);
+        break;
+      default:
+        showGenericError(error.message);
+    }
+  }
+  ```
+
+  ```python tab
+  try:
+      upload_file(file)
+  except ApiError as error:
+      if error.code == 'file_too_large':
+          show_file_size_error(error.message)
+      elif error.code == 'invalid_offset':
+          current_offset = get_current_offset()
+          resume_upload(current_offset)
+      else:
+          show_generic_error(error.message)
+  ```
+
+  ```go tab
+  err := uploadFile(file)
+  if err != nil {
+      switch e := err.(type) {
+      case *ApiError:
+          switch e.Code {
+          case "file_too_large":
+              handleFileSizeError(e.Message)
+          case "invalid_offset":
+              offset := getCurrentOffset()
+              resumeUpload(offset)
+          default:
+              handleGenericError(e.Message)
+          }
+      }
+  }
+  ```
+</Tabs>
+
+## Best Practices
+
+1. **Implement Retry Logic**
+   - Use exponential backoff
+   - Set maximum retries
+   - Handle rate limits
+   - Log failures
+
+2. **Error Recovery**
+   - Save upload state
+   - Resume from failures
+   - Clean up resources
+   - Notify users
+
+3. **Monitoring**
+   - Track error rates
+   - Set up alerts
+   - Monitor patterns
+   - Log details
+
+<Callout type="warning">
+  Always implement proper error handling in production applications to ensure reliable uploads.
+</Callout> 

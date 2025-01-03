@@ -1,234 +1,186 @@
 ---
 title: Authentication
-description: Authentication middleware for securing upload endpoints.
+description: Secure your API with Unkey authentication and alternatives
 ---
 
-# Authentication Middleware
-
-The authentication middleware ensures that all requests to the upload API are properly authenticated and authorized.
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-The middleware validates JWT tokens and implements role-based access control (RBAC) for different upload operations.
+TusFlow uses [Unkey](https://unkey.dev) as its primary authentication provider, offering enterprise-grade API key management. The authentication middleware validates API keys and manages access control across your upload infrastructure.
 
-## Configuration
+<Callout type="info">
+  Unkey provides features like key analytics, ratelimiting, and permissions management out of the box.
+</Callout>
 
-```typescript
-AUTH_CONFIG = {
-    JWT_SECRET: process.env.JWT_SECRET,
-    TOKEN_EXPIRY: '24h',
-    REFRESH_TOKEN_EXPIRY: '7d',
-    ALGORITHMS: ['HS256'],
-    ISSUER: 'tusflow-api',
-};
-```
+## Implementation
 
-## Token Format
-
-The JWT token should include the following claims:
-
-```json
-{
-    "sub": "user_id",
-    "iss": "tusflow-api",
-    "permissions": ["upload:write", "upload:read"],
-    "exp": 1672531200,
-    "iat": 1672444800
-}
-```
-
-## Required Permissions
-
-Different endpoints require different permissions:
+TusFlow's authentication middleware is built on Unkey's Hono integration:
 
 ```typescript
-const REQUIRED_PERMISSIONS = {
-    POST: ['upload:write'],
-    PATCH: ['upload:write'],
-    HEAD: ['upload:read'],
-    GET: ['upload:read'],
-    DELETE: ['upload:write'],
-    OPTIONS: [], // No auth required
-};
-```
+import { unkey } from '@unkey/hono';
+import type { Context, Next } from 'hono';
 
-## Usage
+export function authentication(config: AuthConfig = {}) {
+    return async (c: Context, next: Next) => {
+        // Check if path is excluded from authentication
+        const path = new URL(c.req.url).pathname;
+        if (isPathExcluded(path, config.excludePaths)) {
+            return next();
+        }
 
-Include the token in the Authorization header:
+        const { UNKEY_API_ID } = env<Bindings>(c);
+        if (!UNKEY_API_ID) {
+            return new Response('Server configuration error', { status: 500 });
+        }
 
-```typescript
-headers: {
-  'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...'
-}
-```
-
-## Error Handling
-
-The middleware returns standardized error responses:
-
-```typescript
-// Missing token
-{
-  "error": {
-    "code": "authentication_required",
-    "message": "No authentication token provided"
-  }
-}
-
-// Invalid token
-{
-  "error": {
-    "code": "invalid_token",
-    "message": "Token is invalid or expired"
-  }
-}
-
-// Insufficient permissions
-{
-  "error": {
-    "code": "insufficient_permissions",
-    "message": "Required permission not found"
-  }
-}
-```
-
-## Implementation Details
-
-The middleware performs the following checks:
-
-1. Token presence and format validation
-2. JWT signature verification
-3. Token expiration check
-4. Permission validation
-5. Rate limiting integration
-
-### Token Validation
-
-```typescript
-async function validateToken(token: string): Promise<DecodedToken> {
-    try {
-        const decoded = await jwt.verify(token, AUTH_CONFIG.JWT_SECRET, {
-            algorithms: AUTH_CONFIG.ALGORITHMS,
-            issuer: AUTH_CONFIG.ISSUER,
+        const middleware = unkey({
+            apiId: UNKEY_API_ID,
+            onError: config.onError || defaultErrorHandler,
+            handleInvalidKey: config.handleInvalidKey || defaultInvalidKeyHandler
         });
-        return decoded;
-    } catch (error) {
-        throw new AuthError('Token validation failed');
-    }
-}
-```
 
-### Permission Check
-
-```typescript
-function checkPermissions(
-    decodedToken: DecodedToken,
-    requiredPermissions: string[]
-): boolean {
-    return requiredPermissions.every((permission) =>
-        decodedToken.permissions.includes(permission)
-    );
-}
-```
-
-## Security Best Practices
-
-1. **Token Storage**
-
-    - Store tokens securely using HTTP-only cookies
-    - Implement proper token refresh mechanisms
-    - Use secure session management
-
-2. **Token Validation**
-
-    - Validate all token claims
-    - Check token expiration
-    - Verify token signature
-
-3. **Error Handling**
-
-    - Return generic error messages
-    - Log detailed errors server-side
-    - Implement proper rate limiting
-
-4. **CORS Configuration**
-    - Set appropriate CORS headers
-    - Validate origin headers
-    - Use secure cookie attributes
-
-## Example Implementation
-
-```typescript
-import { jwt } from '@tus/server';
-
-export async function authenticate(
-    request: Request,
-    required: string[]
-): Promise<void> {
-    const token = extractToken(request);
-    if (!token) {
-        throw new AuthError('No token provided');
-    }
-
-    const decoded = await validateToken(token);
-    if (!checkPermissions(decoded, required)) {
-        throw new AuthError('Insufficient permissions');
-    }
-
-    // Attach user info to request
-    request.user = {
-        id: decoded.sub,
-        permissions: decoded.permissions,
+        return middleware(c, next);
     };
 }
 ```
 
-## Integration with Rate Limiting
+## Configuration
 
-The authentication middleware integrates with rate limiting:
-
-```typescript
-async function handleRequest(request: Request): Promise<Response> {
-    try {
-        const token = await authenticate(request);
-        const rateLimit = await checkRateLimit(token.sub);
-
-        if (!rateLimit.allowed) {
-            throw new RateLimitError();
-        }
-
-        return await handleAuthenticatedRequest(request);
-    } catch (error) {
-        return handleError(error);
-    }
-}
-```
-
-## Testing
-
-Example tests for the authentication middleware:
+Configure authentication in your security middleware:
 
 ```typescript
-describe('Authentication Middleware', () => {
-    it('should validate valid tokens', async () => {
-        const token = generateTestToken(['upload:write']);
-        const request = new Request('/', {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        await expect(
-            authenticate(request, ['upload:write'])
-        ).resolves.not.toThrow();
-    });
-
-    it('should reject invalid tokens', async () => {
-        const request = new Request('/', {
-            headers: { Authorization: 'Bearer invalid' },
-        });
-
-        await expect(authenticate(request, ['upload:write'])).rejects.toThrow(
-            'Token validation failed'
-        );
-    });
+// Create authentication middleware with public paths excluded
+const authMiddleware = authentication({
+    excludePaths: ['/health'], // Add your public paths here
 });
+
+// Combine with other security measures
+export const securityMiddleware = every(
+    secureHeadersMiddleware,
+    corsMiddleware,
+    authMiddleware,
+    csrfProtectionMiddleware,
+    rateLimitMiddleware
+);
 ```
+
+## Features
+
+1. **API Key Management**
+   - Automatic key validation
+   - Usage analytics
+   - Key revocation
+   - Permissions management
+
+2. **Security Features**
+   - Path-based exclusions
+   - Custom error handling
+   - Invalid key handling
+   - Automatic headers
+
+3. **Integration Benefits**
+   - Simple setup
+   - Built-in monitoring
+   - Scalable solution
+   - Enterprise support
+
+## Alternative Authentication Options
+
+<Callout type="info">
+  While Unkey is recommended, TusFlow supports other authentication methods through Hono's built-in middleware.
+</Callout>
+
+### Bearer Authentication
+
+Using [Hono's Bearer Auth](https://hono.dev/docs/middleware/builtin/bearer-auth):
+
+```typescript
+import { bearerAuth } from 'hono/bearer-auth'
+
+const app = new Hono()
+const token = 'your-secure-token'
+
+app.use('/api/*', bearerAuth({ token }))
+
+// Multiple tokens
+app.use('/api/*', bearerAuth({ 
+  token: ['read-token', 'write-token'] 
+}))
+
+// Custom verification
+app.use('/api/*', bearerAuth({
+  verifyToken: async (token, c) => {
+    return await validateToken(token)
+  }
+}))
+```
+
+### Basic Authentication
+
+Using [Hono's Basic Auth](https://hono.dev/docs/middleware/builtin/basic-auth):
+
+```typescript
+import { basicAuth } from 'hono/basic-auth'
+
+const app = new Hono()
+
+app.use('/api/*', basicAuth({
+  username: 'admin',
+  password: 'secure-password'
+}))
+
+// Multiple users
+app.use('/api/*', basicAuth(
+  {
+    username: 'admin',
+    password: 'admin-pass'
+  },
+  {
+    username: 'user',
+    password: 'user-pass'
+  }
+))
+```
+
+## Best Practices
+
+<Steps>
+  ### Configure Authentication
+  - Set up Unkey API ID
+  - Define excluded paths
+  - Configure error handlers
+  - Set up monitoring
+
+  ### Manage API Keys
+  - Implement key rotation
+  - Set appropriate permissions
+  - Monitor key usage
+  - Handle revocations
+
+  ### Security Considerations
+  - Use HTTPS only
+  - Implement rate limiting
+  - Log authentication attempts
+  - Monitor for abuse
+</Steps>
+
+## Example Usage
+
+  ```typescript index.ts
+  import { Hono } from 'hono';
+  import { authentication } from '@/middleware/authentication';
+
+  const app = new Hono();
+
+  // Apply authentication to all routes
+  app.use('*', authMiddleware);
+
+  export default app;
+  ```
+
+<Callout type="warning">
+  Always use secure methods to store and transmit API keys. Never expose keys in client-side code.
+</Callout>

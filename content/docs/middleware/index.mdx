@@ -1,22 +1,47 @@
 ---
 title: Middleware
-description: Tusflow API supports various middleware options to enhance the functionality and security of your file uploads.
+description: Enhance your uploads with TusFlow's middleware capabilities
 ---
 
+import { Cards, Card } from 'fumadocs-ui/components/card'
+import { Shield, Gauge, FileCheck, Zap } from 'lucide-react'
+
+## Available Middleware
+
 <Cards>
-    <Card title="Rate Limiting" href="/docs/middleware/rate-limiting">
-        The rate limiting middleware provides protection against abuse by
-        limiting request rates based on various criteria.
-    </Card>
-    <Card title="File Validation" href="/docs/middleware/file-validation">
-        File validation middleware ensures the integrity and security of
-        uploaded files by verifying their contents and metadata.
-    </Card>
-    <Card title="Cache" href="/docs/middleware/cache">
-        Cache middleware can be used to improve performance by caching
-        frequently accessed data.
-    </Card>
-    <Card title="Authentication" href="/docs/middleware/authentication">
-        Authentication middleware provides secure access control to your API.
-    </Card>
+  <Card
+    title="Authentication"
+    description="Secure your uploads with JWT tokens and API keys"
+    icon={<Shield className="w-6 h-6" />}
+    href="/docs/middleware/authentication"
+  />
+  <Card
+    title="Rate Limiting"
+    description="Protect your API from abuse with intelligent rate limiting"
+    icon={<Gauge className="w-6 h-6" />}
+    href="/docs/middleware/rate-limiting"
+  />
+  <Card
+    title="File Validation"
+    description="Validate files before processing with comprehensive checks"
+    icon={<FileCheck className="w-6 h-6" />}
+    href="/docs/middleware/file-validation"
+  />
+  <Card
+    title="Rate Limit"
+    description="Control request rates and prevent API abuse"
+    icon={<Gauge className="w-6 h-6" />}
+    href="/docs/middleware/rate-limit"
+  />
 </Cards>
+
+## Middleware Configuration
+
+All middleware can be configured through your  `src/middleware/` folder. See the [Configuration](/docs/configuration) section for details.
+
+## Best Practices
+
+- Enable authentication for all production deployments
+- Configure appropriate rate limits based on your use case
+- Implement file validation to prevent abuse
+- Use Rate Limiting to prevent abuse

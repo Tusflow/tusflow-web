@@ -14,8 +14,8 @@ export function VideoUpload() {
   const { resolvedTheme } = useTheme();
 
   return (
-    <div className="flex flex-col w-full">
-      <div className="uppy-wrapper rounded-[0.75rem] border-2 border-dashed border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+    <div className="flex flex-col w-full max-w-4xl mx-auto">
+      <div className="uppy-wrapper rounded-xl border dark:border-gray-800 bg-card">
         <Dashboard
           uppy={uppy}
           theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
@@ -25,11 +25,11 @@ export function VideoUpload() {
             borderRadius: '0.75rem',
           }}
           showProgressDetails={true}
-          note="Video files only, up to 5GB"
+          note="Upload any file type, up to 50GB"
           proudlyDisplayPoweredByUppy={false}
           locale={{
             strings: {
-              dropPasteFiles: 'Drop your video file here or %{browse}',
+              dropPasteFiles: 'Drop your files here or %{browse}',
               browse: 'browse',
               uploadComplete: 'Upload successful!',
               uploadPaused: 'Upload paused',
@@ -39,21 +39,21 @@ export function VideoUpload() {
               cancelUpload: 'Cancel',
               xFilesSelected: {
                 0: '%{smart_count} file selected',
-                1: '%{smart_count} file selected',
+                1: '%{smart_count} files selected',
               },
               uploadingXFiles: {
                 0: 'Uploading %{smart_count} file',
-                1: 'Uploading %{smart_count} file',
+                1: 'Uploading %{smart_count} files',
               },
             },
             pluralize: (n) => (n === 1 ? 0 : 1),
           }}
           metaFields={[
-            { id: 'name', name: 'Name', placeholder: 'Video name' },
+            { id: 'name', name: 'Name', placeholder: 'File name' },
             {
               id: 'description',
               name: 'Description',
-              placeholder: 'Video description',
+              placeholder: 'File description',
             },
             {
               id: 'tags',

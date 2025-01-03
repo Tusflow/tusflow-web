@@ -1,14 +1,64 @@
 ---
 title: API Reference
-description: A comprehensive reference for all API endpoints in the TusFlow Upload API.
+description: Complete reference for the TusFlow Upload API
 ---
 
+import { Cards, Card } from 'fumadocs-ui/components/card'
+import { FileText, Lock, Gauge, AlertTriangle } from 'lucide-react'
+
+## API Overview
+
+TusFlow implements the TUS resumable upload protocol version 1.0.0, providing a robust and reliable way to handle file uploads.
+
+<Callout type="info">
+  Base URL: `https://<your-worker>.workers.dev`
+</Callout>
+
+## Quick Links
+
 <Cards>
-    <Card title="Resumable Uploads" href="/docs/api-reference/api-reference">
-        A comprehensive reference for all API endpoints in the TusFlow Upload
-        API.
-    </Card>
-    <Card title="Multipart Uploads" href="/docs/api-reference/error-handling">
-        A comprehensive overview of the features provided by our API.
-    </Card>
+  <Card
+    title="Endpoints"
+    description="Core API endpoints and their functionality"
+    icon={<FileText className="w-6 h-6" />}
+    href="/docs/api-reference/endpoints"
+  />
+  <Card
+    title="Authentication"
+    description="Secure your API with authentication"
+    icon={<Lock className="w-6 h-6" />}
+    href="/docs/api-reference/authentication"
+  />
+  <Card
+    title="Rate Limits"
+    description="Understanding API rate limits"
+    icon={<Gauge className="w-6 h-6" />}
+    href="/docs/api-reference/rate-limits"
+  />
+  <Card
+    title="Error Handling"
+    description="API error codes and handling"
+    icon={<AlertTriangle className="w-6 h-6" />}
+    href="/docs/api-reference/error-handling"
+  />
 </Cards>
+
+## Authentication
+
+All requests must include an API key in the Authorization header:
+
+```http
+Authorization: Bearer <your-api-key>
+```
+
+## Rate Limiting
+
+Default limits:
+- 100 requests/minute per IP
+- 1000 requests/minute per API key
+
+## Protocol Support
+
+- TUS Protocol: v1.0.0
+- Extensions: creation, creation-with-upload, termination, checksum, expiration
+- Maximum file size: Configurable (default 1GB)

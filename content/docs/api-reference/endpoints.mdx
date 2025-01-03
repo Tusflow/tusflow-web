@@ -1,0 +1,238 @@
+---
+title: API Endpoints
+description: Complete reference for TusFlow API endpoints
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Upload Endpoints
+
+### File Upload Operations
+
+Base URL: `/files/{uploadId}`
+
+<Tabs items={["POST", "PATCH", "HEAD", "DELETE", "GET", "OPTIONS"]}>
+  ```typescript tab="POST"
+  POST /files
+  
+  // Create new upload
+  Headers:
+    Upload-Length: required
+    Upload-Metadata: optional
+    Tus-Resumable: 1.0.0
+  
+  Response:
+    Location: /files/{uploadId}
+    Tus-Resumable: 1.0.0
+  ```
+
+  ```typescript tab="PATCH"
+  PATCH /files/{uploadId}
+  
+  // Upload file chunks
+  Headers:
+    Upload-Offset: required
+    Content-Type: application/offset+octet-stream
+    Content-Length: required
+    Tus-Resumable: 1.0.0
+  
+  Response:
+    Upload-Offset: new_offset
+    Tus-Resumable: 1.0.0
+  ```
+
+  ```typescript tab="HEAD"
+  HEAD /files/{uploadId}
+  
+  // Get upload status
+  Headers:
+    Tus-Resumable: 1.0.0
+  
+  Response:
+    Upload-Length: total_length
+    Upload-Offset: current_offset
+    Upload-Metadata: metadata
+    Tus-Resumable: 1.0.0
+  ```
+
+  ```typescript tab="DELETE"
+  DELETE /files/{uploadId}
+  
+  // Delete upload
+  Headers:
+    Tus-Resumable: 1.0.0
+  
+  Response:
+    204 No Content
+  ```
+
+  ```typescript tab="GET"
+  GET /files/{uploadId}/progress
+  
+  // Get upload progress
+  Response:
+    {
+      "uploadId": "string",
+      "totalSize": number,
+      "uploadedSize": number,
+      "progress": "string",
+      "chunkSize": number,
+      "networkSpeed": number,
+      "uploadedChunks": number[]
+    }
+  ```
+
+  ```typescript tab="OPTIONS"
+  OPTIONS /files/{uploadId}
+  
+  // Get supported methods
+  Response Headers:
+    Tus-Resumable: 1.0.0
+    Tus-Version: 1.0.0
+    Tus-Extension: creation,creation-with-upload
+  ```
+</Tabs>
+
+## Maintenance Endpoints
+
+### Health Check
+
+```typescript
+GET /health
+
+// Check service health
+Response:
+{
+  "status": "ok" | "error"
+}
+
+Headers:
+  X-Health-Check: ok | error
+  X-Response-Time: latency_ms
+  User-Agent: OpenStatus/1.0
+```
+
+### Cleanup Operations
+
+```typescript
+GET /_internal/cron/cleanup
+
+// Cleanup stale uploads (Cloudflare Cron only)
+Headers:
+  X-Cloudflare-Cron: required
+
+Response:
+{
+  "success": boolean,
+  "deletedUploads": number,
+  "freedSpace": number
+}
+```
+
+## Implementation Details
+
+### Upload Progress Endpoint
+
+The GET endpoint for upload progress is implemented as follows:
+
+```typescript
+async function handleGetRequest(
+    c: Context,
+    redis: Redis,
+    uploadId: string,
+    baseHeaders: Record<string, string>
+): Promise<Response> {
+    const cachedMetadata = await retryOperation(
+        () => redis.get<UploadMetadata>(`upload:${uploadId}`),
+        ERROR_MESSAGES.REDIS.OPERATION_FAILED
+    );
+
+    if (!cachedMetadata) {
+        return new Response('Upload not found', { status: 404 });
+    }
+
+    const totalSize = parseInt(cachedMetadata.length);
+    const uploadedSize = parseInt(cachedMetadata.offset);
+    const progress = (uploadedSize / totalSize) * 100;
+
+    return new Response(
+        JSON.stringify({
+            uploadId,
+            totalSize,
+            uploadedSize,
+            progress: progress.toFixed(2),
+            chunkSize: cachedMetadata.chunkSize,
+            networkSpeed: cachedMetadata.networkSpeed,
+            uploadedChunks: cachedMetadata.uploadedChunks,
+        }),
+        {
+            headers: {
+                ...baseHeaders,
+                'Content-Type': 'application/json',
+            },
+        }
+    );
+}
+```
+
+### Route Handler
+
+All routes are handled by a central handler that initializes required services:
+
+```typescript
+app.all('/files/*', async (c) => {
+    // Initialize S3 and Redis clients
+    const s3Client = new S3Client({/*...*/});
+    const redis = new Redis({/*...*/});
+
+    const uploadId = c.req.path.split('/files/')[1];
+    const method = c.req.header('X-HTTP-Method-Override') || c.req.method;
+
+    try {
+        switch (method) {
+            case 'HEAD':
+                return await handleHeadRequest(/*...*/);
+            case 'PATCH':
+                return await handlePatchRequest(/*...*/);
+            case 'POST':
+                return await handlePostRequest(/*...*/);
+            case 'DELETE':
+                return await handleDeleteRequest(/*...*/);
+            case 'GET':
+                return await handleGetRequest(/*...*/);
+            case 'OPTIONS':
+                return handleOptionsRequest(/*...*/);
+            default:
+                return new Response('Method not allowed', { status: 405 });
+        }
+    } catch (error) {
+        console.error(`[${new Date().toISOString()}] Error:`, error);
+        return new Response('Internal Server Error', { status: 500 });
+    }
+});
+```
+
+## Best Practices
+
+<Steps>
+  ### Use Proper Headers
+  - Always include `Tus-Resumable`
+  - Set correct `Content-Type`
+  - Include required metadata
+
+  ### Handle Errors
+  - Implement proper error handling
+  - Return appropriate status codes
+  - Include error details in response
+
+  ### Monitor Progress
+  - Track upload progress
+  - Handle network issues
+  - Implement retry logic
+</Steps>
+
+<Callout type="info">
+  All endpoints support CORS and include appropriate security headers as configured in the security middleware.
+</Callout> 

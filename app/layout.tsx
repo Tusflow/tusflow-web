@@ -48,7 +48,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body className="flex min-h-screen antialiased w-full ">
+      <body className="flex flex-col min-h-screen antialiased w-full ">
         <RootProvider>
           <UppyProvider>
             <Toaster richColors />
