@@ -1,0 +1,237 @@
+---
+title: Security Middleware
+description: The security middleware provides a robust set of security measures for protecting API endpoints and file uploads. It combines multiple security features including CORS, CSRF protection, secure headers, rate limiting, and authentication.
+---
+
+
+
+
+## Configuration
+
+The security configuration is defined in `@/config`:
+
+```typescript
+export const SECURITY_CONFIG = {
+    ALLOWED_ORIGINS: ['*'],
+    ALLOWED_METHODS: [
+        'GET', 'POST', 'PATCH', 'HEAD', 'DELETE', 'OPTIONS'
+    ],
+    ALLOWED_HEADERS: [
+        'Content-Type',
+        'Upload-Length',
+        'Upload-Metadata',
+        'Upload-Offset',
+        'Tus-Resumable',
+        'Authorization',
+        // ... other headers
+    ],
+    EXPOSE_HEADERS: [
+        'Location',
+        'Upload-Offset',
+        'Upload-Length',
+        'Tus-Resumable',
+        // ... other headers
+    ],
+    CREDENTIALS: true,
+};
+```
+
+## Implementation
+
+The security middleware combines multiple security features using Hono's middleware system:
+
+```typescript
+import { SECURITY_CONFIG } from '@/config';
+import { every } from 'hono/combine';
+import { cors } from 'hono/cors';
+import { csrf } from 'hono/csrf';
+import { secureHeaders } from 'hono/secure-headers';
+
+// Combined security middleware
+export const securityMiddleware = every(
+    secureHeadersMiddleware,
+    corsMiddleware,
+    authMiddleware,
+    csrfProtectionMiddleware,
+    rateLimitMiddleware
+);
+```
+
+## Security Features
+
+### Secure Headers
+
+Implements strict security headers to protect against common web vulnerabilities:
+
+```typescript
+const secureHeadersMiddleware = secureHeaders({
+    strictTransportSecurity: 'max-age=31536000; includeSubDomains',
+    contentSecurityPolicy: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+    },
+    permissionsPolicy: {
+        accelerometer: [],
+        camera: [],
+        geolocation: [],
+        gyroscope: [],
+        magnetometer: [],
+        microphone: [],
+        payment: [],
+        usb: [],
+    },
+    crossOriginEmbedderPolicy: true,
+    crossOriginOpenerPolicy: true,
+    crossOriginResourcePolicy: true,
+    referrerPolicy: 'strict-origin-when-cross-origin',
+});
+```
+
+### CORS Protection
+
+Implements Cross-Origin Resource Sharing (CORS) with configurable origins:
+
+```typescript
+const corsMiddleware = cors({
+    origin: (origin) => {
+        const ALLOWED_ORIGINS = SECURITY_CONFIG.ALLOWED_ORIGINS;
+        return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+    },
+    allowMethods: SECURITY_CONFIG.ALLOWED_METHODS,
+    allowHeaders: SECURITY_CONFIG.ALLOWED_HEADERS,
+    exposeHeaders: SECURITY_CONFIG.EXPOSE_HEADERS,
+    credentials: SECURITY_CONFIG.CREDENTIALS,
+});
+```
+
+### CSRF Protection
+
+Protects against Cross-Site Request Forgery attacks:
+
+```typescript
+const csrfProtectionMiddleware = csrf({
+    origin: (origin) => {
+        const ALLOWED_ORIGINS = SECURITY_CONFIG.ALLOWED_ORIGINS;
+        return ALLOWED_ORIGINS.includes(origin);
+    },
+});
+```
+
+### Rate Limiting
+
+Implements rate limiting to prevent abuse:
+
+```typescript
+const rateLimitMiddleware = createRateLimiter();
+```
+
+### Authentication
+
+Handles user authentication with configurable public paths:
+
+```typescript
+const authMiddleware = authentication({
+    excludePaths: ['/health'], // Public paths
+});
+```
+
+## Usage
+
+Apply the security middleware globally in your application:
+
+```typescript
+import { securityMiddleware } from '@/middleware';
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+// Apply security middleware globally
+app.use('*', securityMiddleware);
+```
+
+## Headers Configuration
+
+### Allowed Headers
+
+The middleware supports various headers required for file uploads and API communication:
+
+- Standard headers (Content-Type, Authorization)
+- TUS protocol headers (Upload-Length, Upload-Metadata, etc.)
+- Custom headers (X-Health-Check, X-Response-Time, etc.)
+
+### Exposed Headers
+
+Headers that are exposed to the client:
+
+- Upload-related headers (Location, Upload-Offset, etc.)
+- Rate limiting headers (X-RateLimit-*)
+- Authentication headers (WWW-Authenticate)
+- Monitoring headers (X-Health-Check, X-Response-Time)
+
+## Best Practices
+
+1. **Origin Configuration**
+   - Maintain a strict list of allowed origins
+   - Use environment-specific configurations
+   - Regularly review and update allowed origins
+
+2. **Header Management**
+   - Keep allowed headers list minimal
+   - Regularly audit exposed headers
+   - Update header configurations based on requirements
+
+3. **Security Policies**
+   - Implement strict Content Security Policy
+   - Enable all relevant security headers
+   - Regular security audits and updates
+
+4. **Rate Limiting**
+   - Configure appropriate rate limits
+   - Monitor rate limit effectiveness
+   - Adjust limits based on usage patterns
+
+5. **Authentication**
+   - Maintain updated public paths list
+   - Implement proper token validation
+   - Regular security token rotation
+
+## Error Handling
+
+The middleware provides standardized error responses:
+
+### CORS Error
+```json
+{
+    "error": {
+        "message": "Origin not allowed",
+        "statusCode": 403
+    }
+}
+```
+
+### Rate Limit Error
+```json
+{
+    "error": {
+        "message": "Too many requests",
+        "statusCode": 429,
+        "details": {
+            "retryAfter": 60
+        }
+    }
+}
+```
+
+### Authentication Error
+```json
+{
+    "error": {
+        "message": "Unauthorized",
+        "statusCode": 401
+    }
+}
+```

@@ -9,7 +9,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-TusFlow uses [Upstash Redis](https://upstash.com/) for distributed rate limiting. The rate limiting middleware protects your API from abuse by limiting request frequency based on IP address and HTTP method.
+TusFlow uses [Upstash Ratelimit](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) for distributed rate limiting. The rate limiting middleware protects your API from abuse by limiting request frequency based on IP address and HTTP method.
 
 <Callout type="info">
   Different rate limits are applied for various operations (uploads, chunks, metadata) to optimize for real-world usage patterns.

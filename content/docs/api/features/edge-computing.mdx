@@ -24,9 +24,6 @@ TusFlow runs on Cloudflare's global network of data centers, bringing file proce
   ### Automatic Scaling
   The platform automatically scales based on demand, handling any number of concurrent uploads.
 
-  ### HTTP/3 Support
-  Modern protocol support including HTTP/3 and QUIC for faster, more reliable transfers.
-
   ### Real-time Processing
   Process uploads in real-time at the edge without routing through a central server.
 </Steps>
@@ -51,35 +48,7 @@ TusFlow runs on Cloudflare's global network of data centers, bringing file proce
 - DDoS protection
 - Always-on availability
 
-## Configuration
 
-<Tabs items={["Basic", "Advanced"]}>
-  ```typescript tab
-  // Basic edge configuration
-  const config = {
-    region: 'auto',
-    caching: true,
-    http3: true
-  }
-  ```
-
-  ```typescript tab
-  // Advanced edge configuration
-  const config = {
-    edge: {
-      regions: ['auto'],
-      cacheTtl: 3600,
-      protocols: ['h3', 'h2', 'http/1.1'],
-      concurrency: 10000
-    },
-    optimization: {
-      memorySizeLimit: '128MB',
-      timeoutSeconds: 30,
-      retryAttempts: 3
-    }
-  }
-  ```
-</Tabs>
 
 ## Best Practices
 

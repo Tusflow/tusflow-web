@@ -1,70 +1,114 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --foreground: 240 10% 3.9%;
+
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 240 10% 3.9%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 24 95% 50%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 24 95% 53%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 24 100% 97%;
-    --secondary-foreground: 24 95% 50%;
-    --muted: 24 10% 96.1%;
-    --muted-foreground: 24 5% 45.1%;
-    --accent: 24 100% 97%;
-    --accent-foreground: 24 95% 50%;
+
+    --secondary: 24 10% 96%;
+    --secondary-foreground: 24 5% 11%;
+
+    --muted: 24 5% 96%;
+    --muted-foreground: 24 5% 45%;
+
+    --accent: 24 10% 96%;
+    --accent-foreground: 24 5% 11%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 24 10% 90%;
-    --input: 24 10% 90%;
-    --ring: 24 95% 50%;
-    --chart-1: 24 95% 50%;
-    --chart-2: 0 95% 50%;
-    --chart-3: 45 95% 50%;
-    --chart-4: 12 95% 50%;
-    --chart-5: 30 95% 50%;
-    --radius: 0.5rem;
-    --fd-background: 0 0% 100%;
-    --fd-foreground: 24 95% 50%;
 
-    --fd-muted: 24 10% 96.1%;
-    --fd-muted-foreground: 24 5% 45.1%;
+    --border: 24 5% 90%;
+    --input: 24 5% 90%;
+    --ring: 24 95% 53%;
+
+    --radius: 0.5rem;
+
+    /* Docs Theme */
+    --fd-background: 0 0% 100%;
+    --fd-foreground: 24 95% 53%;
+    --fd-muted: 24 10% 96%;
+    --fd-muted-foreground: 24 5% 45%;
+    --fd-card: 0 0% 100%;
+    --fd-card-foreground: 240 10% 3.9%;
+    --fd-popover: 0 0% 100%;
+    --fd-popover-foreground: 240 10% 3.9%;
+    --fd-border: 24 5% 90%;
+    --fd-input: 24 5% 90%;
+    --fd-primary: 24 95% 53%;
+    --fd-primary-foreground: 0 0% 98%;
+    --fd-secondary: 24 10% 96%;
+    --fd-secondary-foreground: 24 5% 11%;
+    --fd-accent: 24 10% 96%;
+    --fd-accent-foreground: 24 5% 11%;
+    --fd-destructive: 0 84.2% 60.2%;
+    --fd-destructive-foreground: 0 0% 98%;
+    --fd-ring: 24 95% 53%;
+    --fd-radius: 0.5rem;
   }
+
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+
+    --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 24 95% 50%;
+
+    --primary: 24 95% 53%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 24 30% 10%;
-    --secondary-foreground: 24 95% 50%;
-    --muted: 24 30% 15%;
-    --muted-foreground: 24 5% 64%;
-    --accent: 24 30% 15%;
-    --accent-foreground: 24 95% 50%;
+
+    --secondary: 24 5% 11%;
+    --secondary-foreground: 24 5% 96%;
+
+    --muted: 24 5% 11%;
+    --muted-foreground: 24 5% 65%;
+
+    --accent: 24 5% 11%;
+    --accent-foreground: 24 5% 96%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 24 30% 15%;
-    --input: 24 30% 15%;
-    --ring: 24 95% 50%;
-    --chart-1: 24 85% 60%;
-    --chart-2: 0 85% 60%;
-    --chart-3: 45 85% 60%;
-    --chart-4: 12 85% 60%;
-    --chart-5: 30 85% 60%;
-    --fd-background: 0 0% 3.9%;
-    --fd-foreground: 24 95% 50%;
-    --fd-muted: 24 30% 15%;
-    --fd-muted-foreground: 24 5% 64%;
+
+    --border: 24 5% 15%;
+    --input: 24 5% 15%;
+    --ring: 24 95% 53%;
+
+    /* Docs Theme */
+    --fd-background: 240 10% 3.9%;
+    --fd-foreground: 24 95% 53%;
+    --fd-muted: 24 5% 11%;
+    --fd-muted-foreground: 24 5% 65%;
+    --fd-card: 240 10% 3.9%;
+    --fd-card-foreground: 0 0% 98%;
+    --fd-popover: 240 10% 3.9%;
+    --fd-popover-foreground: 0 0% 98%;
+    --fd-border: 24 5% 15%;
+    --fd-input: 24 5% 15%;
+    --fd-primary: 24 95% 53%;
+    --fd-primary-foreground: 0 0% 98%;
+    --fd-secondary: 24 5% 11%;
+    --fd-secondary-foreground: 24 5% 96%;
+    --fd-accent: 24 5% 11%;
+    --fd-accent-foreground: 24 5% 96%;
+    --fd-destructive: 0 62.8% 30.6%;
+    --fd-destructive-foreground: 0 0% 98%;
+    --fd-ring: 24 95% 53%;
   }
 }
+
 @layer base {
   * {
     @apply border-border;
@@ -77,11 +121,11 @@
   h6 {
     @apply font-cal;
   }
-  p,
-  span {
-    @apply font-inter font-medium;
-  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-inter text-foreground;
   }
+}
+
+.prose :where(code):not(:where([class~='not-prose'] *)) {
+  @apply rounded-md bg-muted px-1.5 py-0.5 font-mono text-sm text-muted-foreground;
 }

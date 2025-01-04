@@ -35,37 +35,6 @@ TusFlow implements smart chunk management to handle large file uploads efficient
   Once all chunks are uploaded, they're automatically assembled in the correct order.
 </Steps>
 
-## Configuration
-
-<Tabs items={["Basic", "Advanced"]}>
-  ```typescript tab
-  // Basic configuration
-  const config = {
-    chunkSize: 5 * 1024 * 1024, // 5MB
-    parallelUploads: 3,
-    retries: 3
-  }
-  ```
-
-  ```typescript tab
-  // Advanced configuration
-  const config = {
-    chunkSize: {
-      min: 5 * 1024 * 1024,    // 5MB minimum
-      max: 50 * 1024 * 1024,   // 50MB maximum
-      target: 10 * 1024 * 1024 // 10MB target
-    },
-    parallel: {
-      max: 5,
-      minChunkSize: 1024 * 1024
-    },
-    retry: {
-      attempts: 3,
-      backoff: 'exponential'
-    }
-  }
-  ```
-</Tabs>
 
 ## Features
 

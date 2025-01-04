@@ -1,0 +1,8 @@
+{
+    "title": "Tusflow UI",
+    "description": "A powerful file upload interface built on top of Uppy",
+    "root": true,
+    "pages": [
+      "index"
+    ]
+}

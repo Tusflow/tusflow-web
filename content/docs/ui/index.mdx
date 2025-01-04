@@ -1,0 +1,195 @@
+---
+title: Tusflow UI
+description: A powerful file upload interface built on top of Uppy, providing a seamless and customizable upload experience for Next.js applications.
+---
+
+<Callout type="info">
+  We are currently working on a new upload UI component using shadcn/ui. Stay tuned for updates!
+</Callout>
+
+<Callout type="info">
+  This installation guide is specifically for Next.js applications. For other frameworks like Angular, Vue, or Svelte, please refer to the [official Uppy documentation](https://uppy.io/docs/).
+</Callout>
+
+## Installation
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+First, install the required Uppy packages. You can use your preferred package manager:
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash
+    npm install @uppy/core @uppy/dashboard @uppy/react @uppy/tus
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @uppy/core @uppy/dashboard @uppy/react @uppy/tus
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @uppy/core @uppy/dashboard @uppy/react @uppy/tus
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @uppy/core @uppy/dashboard @uppy/react @uppy/tus
+    ```
+  </Tab>
+</Tabs>
+
+
+## Setting up the Provider
+
+Create a new file called `UppyProvider.tsx` in your components directory:
+
+```tsx
+'use client';
+
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import Uppy, { type Meta, type UppyFile } from '@uppy/core';
+import Tus, { type TusBody } from '@uppy/tus';
+import { toast } from 'sonner';
+
+const UppyContext = createContext<Uppy<Meta, TusBody> | null>(null);
+
+export const useUppy = () => {
+  const context = useContext(UppyContext);
+  if (!context) {
+    throw new Error('useUppy must be used within an UppyProvider');
+  }
+  return context;
+};
+
+export const UppyProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [uppy] = useState(() =>
+    new Uppy({
+      autoProceed: false,
+      restrictions: {
+        maxFileSize: 5 * 1024 * 1024 * 1024, // 5GB
+        minFileSize: 1000000, // 1MB
+        maxNumberOfFiles: 5,
+      },
+      debug: true,
+    }).use(Tus, {
+      endpoint: 'YOUR_TUS_ENDPOINT',
+      limit: 5,
+      withCredentials: false,
+    })
+  );
+
+  useEffect(() => {
+    uppy.on('file-added', (file) => {
+      toast.success(`File ${file.meta.name} added successfully`);
+    });
+
+    uppy.on('upload-success', (file) => {
+      toast.success(`Successfully uploaded ${file?.meta.name}!`);
+    });
+
+    uppy.on('upload-error', (file, error) => {
+      toast.error(`Failed to upload ${file?.meta.name}: ${error.message}`);
+    });
+
+    return () => {
+      uppy.cancelAll();
+    };
+  }, [uppy]);
+
+  return <UppyContext.Provider value={uppy}>{children}</UppyContext.Provider>;
+};
+```
+
+## Creating the File Uploader Component
+
+Create a new file called `file-uploader.tsx` in your components directory:
+
+```tsx
+'use client';
+
+import React from 'react';
+import { useTheme } from 'next-themes';
+import '@uppy/core/dist/style.min.css';
+import '@uppy/dashboard/dist/style.min.css';
+import { Dashboard } from '@uppy/react';
+import { useUppy } from './UppyProvider';
+
+export function FileUploader() {
+  const uppy = useUppy();
+  const { resolvedTheme } = useTheme();
+
+  return (
+    <div className="flex flex-col w-full max-w-4xl mx-auto">
+      <div className="uppy-wrapper rounded-xl border dark:border-gray-800 bg-card">
+        <Dashboard
+          uppy={uppy}
+          theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+          width="100%"
+          height="450px"
+          showProgressDetails={true}
+          note="Upload any file type, up to 5GB"
+          proudlyDisplayPoweredByUppy={false}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+## Adding the Provider to Your Layout
+
+Update your `app/layout.tsx` to include the UppyProvider:
+
+```tsx
+import { UppyProvider } from '@/components/UppyProvider';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <UppyProvider>
+          {children}
+        </UppyProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Usage
+
+You can now use the FileUploader component in any of your pages:
+
+```tsx
+import { FileUploader } from '@/components/file-uploader';
+
+export default function UploadPage() {
+  return (
+    <div>
+      <h1>File Upload</h1>
+      <FileUploader />
+    </div>
+  );
+}
+```
+
+> [!important]
+> Make sure to replace `YOUR_TUS_ENDPOINT` in the UppyProvider with your actual tus server endpoint.
+
+## Styling
+
+The Uppy Dashboard comes with its own styles. Make sure you've imported them in your component:
+
+```tsx
+import '@uppy/core/dist/style.min.css';
+import '@uppy/dashboard/dist/style.min.css';
+```
+
+You can customize the appearance further using Tailwind CSS classes and the theme prop on the Dashboard component.
