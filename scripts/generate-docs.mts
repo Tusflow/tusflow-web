@@ -15,8 +15,8 @@ async function generateDocs() {
 
   await Promise.all([
     OpenAPI.generateFiles({
-      input: ['./museum.yaml'],
-      output: './content/docs/openapi',
+      input: ['./tusflow.yaml'],
+      output: './content/docs/api-reference',
       per: 'operation',
     }),
     Typescript.generateFiles({

@@ -1,5 +1,3 @@
 {
-  "title": "TusFlow Documentation",
-  "root": true,
-  "pages": ["index", "getting-started", "..."]
-} 
+    "pages": ["api", "openapi"]
+}

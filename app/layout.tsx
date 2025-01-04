@@ -6,7 +6,6 @@ import { UppyProvider } from 'components/UppyProvider';
 import Footer from 'components/footer';
 import { Toaster } from 'components/ui/sonner';
 import { calSans, inter } from 'fonts';
-import { Banner } from 'fumadocs-ui/components/banner';
 import { RootProvider } from 'fumadocs-ui/provider';
 
 import { cn } from '@/lib/utils';

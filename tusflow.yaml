@@ -1,0 +1,694 @@
+openapi: 3.1.0
+info:
+  title: TusFlow API
+  description: A robust implementation of the TUS protocol for resumable file uploads.\nSupports multipart uploads, checksums, and file validation.\n\nSome useful links:\n- [TusFlow Documentation](https://tusflow.vercel.app/)\n- [TUS Protocol](https://tus.io/)\n- [Source Code](https://github.com/mpesaflow/tusflow)"
+  termsOfService: https://tusflow.vercel.app/terms/
+  version: 1.0.0
+  contact:
+    email: support@tusflow.com
+    url: https://tusflow.vercel.app/
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit/
+externalDocs:
+  description: Find out more about TusFlow
+  url: https://tusflow.vercel.app/docs
+servers:
+  - url: https://uploader.tus.api.mpesaflow.com
+    description: Production server
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+  - OAuth2:
+    description: OAuth2 authentication
+    flows:
+      implicit:
+        authorizationUrl: https://auth.tusflow.com/oauth/authorize
+        scopes:
+          write:uploads: modify uploads in your account
+          read:uploads: read your uploads
+paths:
+  /health:
+    get:
+      operationId: getHealthStatus
+      summary: Check API health status
+      description: Returns the health status of the API and its dependent services (S3 and Redis)
+      tags:
+        - System
+      responses:
+        200:
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+                    properties:
+                      s3:
+                        type: string
+                        enum:
+                          - up
+                      redis:
+                        type: string
+                        enum:
+                          - up
+                  version:
+                    type: string
+              examples:
+                default:
+                  value:
+                    status: healthy
+                    timestamp: 2024-12-17T11:35:23+03:00
+                    services:
+                      s3: up
+                      redis: up
+                    version: 1.0.0
+        503:
+          description: System is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - unhealthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+                    properties:
+                      s3:
+                        type: string
+                        enum:
+                          - up
+                          - down
+                      redis:
+                        type: string
+                        enum:
+                          - up
+                          - down
+                  version:
+                    type: string
+              examples:
+                default:
+                  value:
+                    status: unhealthy
+                    timestamp: 2024-12-17T11:35:23+03:00
+                    services:
+                      s3: down
+                      redis: up
+                    version: 1.0.0
+  /files/{uploadId}:
+    parameters:
+      - name: uploadId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Unique identifier for the upload
+    post:
+      operationId: createUpload
+      summary: Create a new upload
+      description: Initiates a new file upload session
+      tags:
+        - Upload
+      parameters:
+        - name: Upload-Length
+          in: header
+          schema:
+            type: string
+          description: Total size of the file in bytes
+        - name: Upload-Defer-Length
+          in: header
+          schema:
+            type: string
+            enum:
+              - 1
+          description: Indicates if the upload length will be provided later
+        - name: Tus-Resumable
+          in: header
+          required: true
+          schema:
+            type: string
+            enum:
+              - 1.0.0
+          description: TUS protocol version
+        - name: Upload-Metadata
+          in: header
+          schema:
+            type: string
+          description: Custom metadata for the upload (base64 encoded)
+      requestBody:
+        required: false
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        201:
+          description: Upload created successfully
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL for the created resource
+            Tus-Resumable:
+              schema:
+                type: string
+              description: TUS protocol version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    examples: Upload created successfully
+              examples:
+                default:
+                  value:
+                    message: Upload created successfully
+        412:
+          description: Precondition Failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+        413:
+          description: Request Entity Too Large
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+    head:
+      operationId: getUploadInfo
+      summary: Get upload information
+      description: Retrieve metadata about an ongoing upload
+      tags:
+        - Upload
+      responses:
+        204:
+          description: Upload information retrieved successfully
+          headers:
+            Upload-Offset:
+              schema:
+                type: string
+              description: Current offset of the upload
+            Upload-Length:
+              schema:
+                type: string
+              description: Total size of the file
+            Upload-Metadata:
+              schema:
+                type: string
+              description: Custom metadata associated with the upload
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - no-store
+              description: Caching instructions
+            Tus-Resumable:
+              schema:
+                type: string
+              description: TUS protocol version
+        404:
+          description: Upload not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+    get:
+      operationId: getUploadStatus
+      summary: Get upload status
+      description: Retrieve the current status of an upload including progress information
+      tags:
+        - Upload
+      responses:
+        200:
+          description: Upload status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadStatus'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/UploadStatus'
+        404:
+          description: Upload not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      operationId: uploadFileChunk
+      summary: Upload file chunk
+      description: Upload a chunk of the file starting at the specified offset
+      tags:
+        - Upload
+      parameters:
+        - name: Upload-Offset
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Starting offset of the chunk
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            enum:
+              - application/offset+octet-stream
+        - name: Tus-Resumable
+          in: header
+          required: true
+          schema:
+            type: string
+            enum:
+              - 1.0.0
+      requestBody:
+        required: true
+        content:
+          application/offset+octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        204:
+          description: Chunk uploaded successfully
+          headers:
+            Upload-Offset:
+              schema:
+                type: string
+              description: New offset after the chunk upload
+            Tus-Resumable:
+              schema:
+                type: string
+        409:
+          description: Upload offset conflict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+        412:
+          description: Precondition Failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+        415:
+          description: Unsupported Media Type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+    delete:
+      operationId: deleteUpload
+      summary: Delete upload
+      description: Terminate and clean up an upload
+      tags:
+        - Upload
+      responses:
+        204:
+          description: Upload deleted successfully
+          headers:
+            Tus-Resumable:
+              schema:
+                type: string
+        404:
+          description: Upload not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                  statusCode:
+                    type: integer
+                    description: HTTP status code
+                  errorCode:
+                    type: string
+                    description: Application-specific error code
+                  details:
+                    type: object
+                    description: Additional error details
+                required:
+                  - message
+                  - statusCode
+                  - errorCode
+    options:
+      operationId: getServerCapabilities
+      summary: Get server capabilities
+      description: Retrieve the server's TUS protocol capabilities
+      tags:
+        - Upload
+      responses:
+        204:
+          description: Server capabilities retrieved successfully
+          headers:
+            Tus-Version:
+              schema:
+                type: string
+              description: Supported TUS versions
+            Tus-Extension:
+              schema:
+                type: string
+              description: Supported protocol extensions
+            Tus-Max-Size:
+              schema:
+                type: string
+              description: Maximum allowed file size
+            Tus-Resumable:
+              schema:
+                type: string
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Optional API key for authentication
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+    OAuth2:
+      type: oauth2
+      description: OAuth2 authentication
+      flows:
+        implicit:
+          authorizationUrl: https://auth.tusflow.com/oauth/authorize
+          scopes:
+            write:uploads: modify uploads in your account
+            read:uploads: read your uploads
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          examples: [Invalid request parameters]
+        statusCode:
+          type: integer
+          format: int32
+          description: HTTP status code
+          examples: [400]
+        errorCode:
+          type: string
+          description: Application-specific error code
+          examples: [INVALID_REQUEST]
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties:
+            type: object
+      required:
+        - message
+        - statusCode
+        - errorCode
+      xml:
+        name: error
+    UploadMetadata:
+      type: object
+      required:
+        - filename
+        - contentType
+        - size
+      properties:
+        filename:
+          type: string
+          description: Original filename
+          examples: [document.pdf]
+        contentType:
+          type: string
+          description: File MIME type
+          examples: [application/pdf]
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+          examples: [1048576]
+      xml:
+        name: metadata
+    UploadStatus:
+      type: object
+      required:
+        - uploadId
+        - totalSize
+        - uploadedSize
+        - progress
+        - status
+      properties:
+        uploadId:
+          type: string
+          description: Unique identifier of the upload
+          examples: [abc123]
+        totalSize:
+          type: integer
+          format: int64
+          description: Total size of the file in bytes
+          examples: [1048576]
+        uploadedSize:
+          type: integer
+          format: int64
+          description: Number of bytes uploaded
+          examples: [524288]
+        progress:
+          type: string
+          description: Upload progress percentage
+          examples: [50.00]
+        status:
+          type: string
+          description: Current upload status
+          enum:
+            - pending
+            - uploading
+            - completed
+            - failed
+          examples: [uploading]
+        chunkSize:
+          type: integer
+          format: int32
+          description: Size of each upload chunk in bytes
+          examples: [8388608]
+        networkSpeed:
+          type: number
+          format: float
+          description: Current upload speed in bytes per second
+          examples: [1048576]
+        uploadedChunks:
+          type: array
+          description: List of successfully uploaded chunk numbers
+          items:
+            type: integer
+            format: int32
+      xml:
+        name: status
+  requestBodies:
+    Upload:
+      description: File upload request
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+    UploadMetadata:
+      description: Upload metadata
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UploadMetadata'
+  responses:
+    ValidationError:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: #/components/schemas/Error
+    FileValidationError:
+      description: File validation failed
+      content:
+        application/json:
+          schema:
+            $ref: #/components/schemas/Error
+    RateLimitError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: #/components/schemas/Error
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ForbiddenError:
+      description: Access token does not have the required scope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/Error'
+tags:
+  - name: Upload
+    description: File upload operations using the TUS protocol
+    externalDocs:
+      description: Find out more about TUS protocol
+      url: https://tus.io/protocols/resumable-upload.html
+  - name: System
+    description: System-related endpoints
+    externalDocs:
+      description: Find out more about our system architecture
+      url: https://tusflow.vercel.app/docs/architecture

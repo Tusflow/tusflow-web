@@ -1,12 +1,10 @@
 ---
-title: Introduction
+title: Getting Started
 description: TusFlow is an open-source, high-performance implementation of the TUS (resumable upload) protocol built on Cloudflare Workers. It provides enterprise-grade file upload infrastructure with built-in support for resumable uploads, chunking, and advanced security features.
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card'
 import { FileText, Upload, Shield, Zap } from 'lucide-react'
-
-
 
 ## Key Features
 
@@ -15,50 +13,25 @@ import { FileText, Upload, Shield, Zap } from 'lucide-react'
     title="Resumable Uploads"
     description="Built-in support for pause, resume and automatic recovery of uploads"
     icon={<Upload className="w-6 h-6" />}
-    href="/docs/features/resumable-uploads"
+    href="/docs/api/features/resumable-uploads"
   />
   <Card
     title="Edge Computing"
     description="Powered by Cloudflare Workers for optimal global performance"
     icon={<Zap className="w-6 h-6" />}
-    href="/docs/features/edge-computing"
+    href="/docs/api/features/edge-computing"
   />
   <Card
     title="Enterprise Security"
     description="Advanced file validation, malware scanning and access controls"
     icon={<Shield className="w-6 h-6" />}
-    href="/docs/features/security"
+    href="/docs/api/features/security"
   />
   <Card
     title="Developer First"
     description="Comprehensive API documentation and client SDKs"
     icon={<FileText className="w-6 h-6" />}
-    href="/docs/api-reference"
-  />
-</Cards>
-
-## Quick Links
-
-<Cards>
-  <Card
-    title="Getting Started"
-    description="Quick start guide to integrate TusFlow into your application"
-    href="/docs/getting-started"
-  />
-  <Card
-    title="API Reference" 
-    description="Complete API documentation and endpoint references"
-    href="/docs/api-reference"
-  />
-  <Card
-    title="Configuration"
-    description="Learn how to configure and customize TusFlow"
-    href="/docs/configuration"
-  />
-  <Card
-    title="Middleware"
-    description="Authentication, rate limiting and other middleware options"
-    href="/docs/middleware"
+    href="/docs/api/api-reference"
   />
 </Cards>
 
@@ -70,7 +43,9 @@ import { FileText, Upload, Shield, Zap } from 'lucide-react'
 - **Open Source**: MIT licensed and community driven
 - **Protocol Compliant**: Full TUS v1.0.0 protocol implementation
 
-## Installation
+## Quick Start Guide
+
+### Installation
 
 ```bash
 # Clone the repository
@@ -80,14 +55,39 @@ git clone https://github.com/Tusflow/tusflow-api
 npm install
 
 # Configure environment
-cp wrangler.toml.example wrangler.toml
+
 
 # Deploy to Cloudflare Workers
 npm run deploy
 ```
 
-## Community
+## Documentation
 
-- [GitHub Repository](https://github.com/evansso/tusflow-api)
-- [Report Issues](https://github.com/evansso/tusflow-api/issues)
-- [Contributing Guide](https://github.com/evansso/tusflow-api/blob/main/CONTRIBUTING.md)
+<Cards>
+  <Card
+    title="Configuration"
+    description="Learn how to configure and customize TusFlow"
+    href="/docs/api/configuration"
+  />
+  <Card
+    title="API Reference" 
+    description="Complete API documentation and endpoint references"
+    href="/docs/api/api-reference"
+  />
+  <Card
+    title="Middleware"
+    description="Authentication, rate limiting and other middleware options"
+    href="/docs/api/middleware"
+  />
+  <Card
+    title="Features"
+    description="Explore TusFlow's advanced features and capabilities"
+    href="/docs/api/features"
+  />
+</Cards>
+
+## Community & Support
+
+- [GitHub Repository](https://github.com/Tusflow/tusflow-web)
+- [Report Issues](https://github.com/Tusflow/tusflow-web/issues)
+- [Contributing Guide](https://github.com/Tusflow/tusflow-web/blob/main/CONTRIBUTING.md)

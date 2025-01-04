@@ -14,14 +14,15 @@ export const baseOptions: BaseLayoutProps = {
   links: [
     {
       text: 'Documentation',
-      url: '/docs',
+      url: '/docs/api',
       active: 'nested-url',
     },
     {
-      text: 'Blocks',
-      url: '/blocks',
+      text: 'Roadmap',
+      url: '/roadmap',
       active: 'nested-url',
     },
   ],
-  githubUrl: 'https://github.com/evansso/',
+  disableThemeSwitch: true,
+  githubUrl: 'https://github.com/Tusflow/',
 };
