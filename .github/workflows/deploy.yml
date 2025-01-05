@@ -22,25 +22,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup node
+        uses: useblacksmith/setup-node@v5
         with:
-          bun-version: latest
+          node-version: 20
+          cache: 'npm'
 
       - name: Restore cache
         uses: useblacksmith/cache@v5
         with:
           path: |
             .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
       - name: Install dependencies
-        run: bun install
+        run: npm install --force
 
       - name: Install Vercel CLI
-        run: bun add -g vercel@latest
+        run: npm install -g vercel@latest --force
 
       - name: Pull Vercel environment variables
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
