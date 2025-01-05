@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: blacksmith-8vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -22,26 +22,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup node
-        uses: useblacksmith/setup-node@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 20
-          cache: 'npm'
+          bun-version: latest
 
       - name: Restore cache
-        uses: useblacksmith/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             .next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
 
       - name: Install dependencies
-        run: npm install --force
+        run: bun install
 
       - name: Install Vercel CLI
-        run: npm install -g vercel@latest --force
+        run: bun add -g vercel@latest
 
       - name: Pull Vercel environment variables
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
