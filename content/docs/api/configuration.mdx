@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Complete guide to TusFlow configuration options
+description: Complete guide to Tusflow configuration options
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout'
@@ -9,7 +9,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-TusFlow's configuration is managed through:
+Tusflow's configuration is managed through:
 1. Environment variables in `wrangler.toml`
 2. TypeScript configuration modules in `config/`
 
@@ -22,7 +22,7 @@ TusFlow's configuration is managed through:
 Configure your environment in `wrangler.toml`:
 
 ```toml
-name = "tusflow-api"
+name = "Tusflow-api"
 main = "src/index.ts"
 compatibility_flags = [ "nodejs_compat" ]
 compatibility_date = "2024-09-23"
@@ -210,7 +210,7 @@ Configure caching in `cache-config.ts`:
 
 ```typescript
 export const CACHE_CONFIG = {
-    CACHE_NAME: 'tusflow-api-cache',
+    CACHE_NAME: 'Tusflow-api-cache',
     MAX_AGE: UPLOAD_CONFIG.UPLOAD.INCOMPLETE_TTL,
     VARY_HEADERS: ['Accept', 'Accept-Encoding', 'Authorization']
 };

@@ -118,10 +118,7 @@ export default function HomePage() {
                   <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                 </Button>
               </Link>
-              <Link
-                href="https://github.new/tusflow"
-                className="w-full sm:w-auto"
-              >
+              <Link href="https://git.new/tusflow" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="lg"
@@ -206,7 +203,7 @@ export default function HomePage() {
               Try It Now
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-              Experience TusFlow's powerful features firsthand. No account
+              Experience Tusflow's powerful features firsthand. No account
               required.
             </p>
           </motion.div>

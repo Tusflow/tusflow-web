@@ -51,7 +51,7 @@ export default function Footer() {
               <div className="space-y-4">
                 <h3 className="text-2xl font-bold">
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-red-600">
-                    TusFlow
+                    Tusflow
                   </span>
                 </h3>
                 <p className="text-base text-muted-foreground max-w-md">
@@ -68,8 +68,8 @@ export default function Footer() {
                     }
                   >
                     <StatusWidget
-                      slug="tusflow"
-                      href="https://tusflow.openstatus.dev"
+                      slug="Tusflow"
+                      href="https://Tusflow.openstatus.dev"
                     />
                   </Suspense>
                 </div>
@@ -140,7 +140,7 @@ export default function Footer() {
             variants={fadeInUp}
           >
             <p className="text-sm text-muted-foreground text-center">
-              © {new Date().getFullYear()} TusFlow. Built with{' '}
+              © {new Date().getFullYear()} Tusflow. Built with{' '}
               <span className="text-orange-500">❤️</span> for the open source
               community.
             </p>

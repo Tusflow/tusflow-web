@@ -9,7 +9,7 @@ const completedFeatures = [
   {
     title: 'Initial project setup',
     description:
-      'Foundation of the TusFlow project structure and configuration',
+      'Foundation of the Tusflow project structure and configuration',
   },
   {
     title: 'TUS protocol implementation',
@@ -60,7 +60,7 @@ const completedFeatures = [
 
 const upcomingFeatures = [
   {
-    title: 'TusFlow UI Components',
+    title: 'Tusflow UI Components',
     description: 'Ready-to-use UI components for file uploads',
     items: [
       'Drag and drop file upload zone',
@@ -279,12 +279,12 @@ export default function RoadmapPage() {
             <Card className="p-8 border border-orange-100 dark:border-orange-900/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
               <h2 className="text-2xl font-bold mb-4">Missing Something?</h2>
               <p className="text-muted-foreground mb-6">
-                We're always looking to improve TusFlow. If you have a feature
+                We're always looking to improve Tusflow. If you have a feature
                 in mind that would make your file upload experience better, let
                 us know!
               </p>
               <a
-                href="https://github.com/tusflow/tusflow-web/issues/new?labels=feature-request&template=feature_request.md"
+                href="https://github.com/Tusflow/Tusflow-web/issues/new?labels=feature-request&template=feature_request.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-gradient-to-r from-orange-600 to-red-600 text-white font-medium hover:from-orange-700 hover:to-red-700 transition-colors"

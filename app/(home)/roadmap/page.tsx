@@ -76,12 +76,12 @@ export default function RoadmapPage() {
               Product Roadmap
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Our vision for the future of TusFlow. See what we're building and
+              Our vision for the future of Tusflow. See what we're building and
               help shape the future of file uploads.
             </p>
             <div className="flex justify-center">
               <Link
-                href="https://github.com/Tusflow/tusflow-api/issues"
+                href="https://github.com/Tusflow/Tusflow-api/issues"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -166,7 +166,7 @@ export default function RoadmapPage() {
               Help Shape Our Future
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              We're building TusFlow in the open. Join our community and help us
+              We're building Tusflow in the open. Join our community and help us
               make file uploads better for everyone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

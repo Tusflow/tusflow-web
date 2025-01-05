@@ -1,6 +1,6 @@
 {
   "title": "OpenAPI Reference",
-  "description": "OpenAPI Reference for the TusFlow API",
+  "description": "OpenAPI Reference for the Tusflow API",
   "root": true,
   "pages": ["create-upload", "get-upload-info", "get-upload-status", "upload-file-chunk", "get-health-status", "delete-upload"]
 } 

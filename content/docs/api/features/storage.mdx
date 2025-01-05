@@ -1,6 +1,6 @@
 ---
 title: Storage Integration
-description: Connect TusFlow to any AWS S3-compatible storage service
+description: Connect Tusflow to any AWS S3-compatible storage service
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout'
@@ -9,7 +9,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-TusFlow supports integration with any AWS S3-compatible storage service, including Cloudflare R2, Tigris, and others. This flexibility allows you to choose the best storage solution for your needs.
+Tusflow supports integration with any AWS S3-compatible storage service, including Cloudflare R2, Tigris, and others. This flexibility allows you to choose the best storage solution for your needs.
 
 ## Supported Storage Services
 
@@ -20,7 +20,7 @@ TusFlow supports integration with any AWS S3-compatible storage service, includi
 
 ## Configuration
 
-To connect TusFlow to your chosen storage service, configure the following environment variables in your `wrangler.toml` file:
+To connect Tusflow to your chosen storage service, configure the following environment variables in your `wrangler.toml` file:
 
 ```toml
 [vars]
@@ -68,7 +68,7 @@ AWS_BUCKET_NAME = "your-tigris-bucket-name"
 
 ## Implementation Details
 
-TusFlow uses the AWS SDK to interact with S3-compatible storage services. The following code snippet demonstrates how to initialize the S3 client:
+Tusflow uses the AWS SDK to interact with S3-compatible storage services. The following code snippet demonstrates how to initialize the S3 client:
 
 ```typescript
 import { S3Client } from '@aws-sdk/client-s3';

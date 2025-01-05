@@ -1,6 +1,6 @@
 ---
 title: Observability
-description: Monitor your TusFlow API health and performance with built-in observability features
+description: Monitor your Tusflow API health and performance with built-in observability features
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout'
@@ -9,7 +9,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-TusFlow provides comprehensive observability through health checks and integrations with monitoring services like BetterStack and OpenStatus. Monitor your API's health, track performance metrics, and get alerted about issues.
+Tusflow provides comprehensive observability through health checks and integrations with monitoring services like BetterStack and OpenStatus. Monitor your API's health, track performance metrics, and get alerted about issues.
 
 ## Health Check Endpoint
 
@@ -42,14 +42,14 @@ The health check:
 
 ## BetterStack Integration
 
-Monitor your TusFlow API with BetterStack's comprehensive observability platform:
+Monitor your Tusflow API with BetterStack's comprehensive observability platform:
 
 <Steps>
   ### Configure BetterStack
   1. Create a BetterStack account
   2. Add a new monitor in BetterStack dashboard
   3. Select "HTTP" monitor type
-  4. Enter your TusFlow health endpoint URL
+  4. Enter your Tusflow health endpoint URL
 
   ### Set Up Alerts
   1. Configure notification channels (email, Slack, etc.)
@@ -69,8 +69,8 @@ Example BetterStack configuration:
 ```typescript
 // BetterStack Monitor Settings
 {
-  "name": "TusFlow API Health",
-  "url": "https://api.tusflow.dev/health",
+  "name": "Tusflow API Health",
+  "url": "https://api.Tusflow.dev/health",
   "check_frequency": 30,
   "regions": ["us", "eu", "asia"],
   "alert_threshold": {
@@ -109,8 +109,8 @@ Example OpenStatus configuration:
 ```typescript
 // OpenStatus Monitor Settings
 {
-  "name": "TusFlow API",
-  "url": "https://api.tusflow.dev/health",
+  "name": "Tusflow API",
+  "url": "https://api.Tusflow.dev/health",
   "method": "GET",
   "frequency": "1m",
   "regions": ["iad", "sfo", "fra"],

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import type { Metadata } from 'next';
 
+import { OpenPanelComponent } from '@openpanel/nextjs';
 import { UppyProvider } from 'components/UppyProvider';
 import Footer from 'components/footer';
 import { Toaster } from 'components/ui/sonner';
@@ -13,37 +14,13 @@ import { cn } from '@/lib/utils';
 import '@/styles/global.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://tusflow.com'),
+  metadataBase: new URL('https://tusflow.vercel.app/'),
   title: {
-    default: 'TusFlow - Modern File Upload Infrastructure',
-    template: '%s - TusFlow',
+    default: 'Tusflow - Modern File Upload Infrastructure',
+    template: '%s - Tusflow',
   },
   description:
     'High-performance, open-source implementation of the TUS protocol for reliable file uploads. Built with Cloudflare Workers and modern web standards.',
-  openGraph: {
-    title: 'TusFlow - Modern File Upload Infrastructure',
-    description:
-      'High-performance, open-source implementation of the TUS protocol for reliable file uploads. Built with Cloudflare Workers and modern web standards.',
-    url: 'https://tusflow.com',
-    siteName: 'TusFlow',
-    images: [
-      {
-        url: '/og.png',
-        width: 1200,
-        height: 630,
-      },
-    ],
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'TusFlow - Modern File Upload Infrastructure',
-    description:
-      'High-performance, open-source implementation of the TUS protocol for reliable file uploads. Built with Cloudflare Workers and modern web standards.',
-    creator: '@evansso_',
-    images: ['/og.png'],
-  },
   icons: {
     icon: [
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
@@ -86,6 +63,12 @@ export default function Layout({ children }: { children: ReactNode }) {
               richColors
               closeButton
               className="hidden dark:block"
+            />
+            <OpenPanelComponent
+              clientId={process.env.OPENPANEL_CLIENT_ID!}
+              trackScreenViews={true}
+              trackAttributes={true}
+              trackOutgoingLinks={true}
             />
           </UppyProvider>
         </RootProvider>

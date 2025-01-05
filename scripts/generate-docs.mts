@@ -15,7 +15,7 @@ async function generateDocs() {
 
   await Promise.all([
     OpenAPI.generateFiles({
-      input: ['./tusflow.yaml'],
+      input: ['./Tusflow.yaml'],
       output: './content/docs/api-reference',
       per: 'operation',
     }),

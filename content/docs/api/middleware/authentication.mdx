@@ -9,7 +9,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-TusFlow uses [Unkey](https://unkey.dev) as its primary authentication provider, offering enterprise-grade API key management. The authentication middleware validates API keys and manages access control across your upload infrastructure.
+Tusflow uses [Unkey](https://unkey.dev) as its primary authentication provider, offering enterprise-grade API key management. The authentication middleware validates API keys and manages access control across your upload infrastructure.
 
 <Callout type="info">
   Unkey provides features like key analytics, ratelimiting, and permissions management out of the box.
@@ -17,7 +17,7 @@ TusFlow uses [Unkey](https://unkey.dev) as its primary authentication provider, 
 
 ## Implementation
 
-TusFlow's authentication middleware is built on Unkey's Hono integration:
+Tusflow's authentication middleware is built on Unkey's Hono integration:
 
 ```typescript
 import { unkey } from '@unkey/hono';
@@ -90,7 +90,7 @@ export const securityMiddleware = every(
 ## Alternative Authentication Options
 
 <Callout type="info">
-  While Unkey is recommended, TusFlow supports other authentication methods through Hono's built-in middleware.
+  While Unkey is recommended, Tusflow supports other authentication methods through Hono's built-in middleware.
 </Callout>
 
 ### Bearer Authentication

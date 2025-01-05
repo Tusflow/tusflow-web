@@ -25,7 +25,7 @@ export function VideoUpload() {
             borderRadius: '0.75rem',
           }}
           showProgressDetails={true}
-          note="Upload any file type, up to 50GB"
+          note="Upload images, videos, and documents of 8MB or less"
           proudlyDisplayPoweredByUppy={false}
           locale={{
             strings: {

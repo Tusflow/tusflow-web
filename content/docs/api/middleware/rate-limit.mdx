@@ -9,7 +9,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-TusFlow uses [Upstash Ratelimit](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) for distributed rate limiting. The rate limiting middleware protects your API from abuse by limiting request frequency based on IP address and HTTP method.
+Tusflow uses [Upstash Ratelimit](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) for distributed rate limiting. The rate limiting middleware protects your API from abuse by limiting request frequency based on IP address and HTTP method.
 
 <Callout type="info">
   Different rate limits are applied for various operations (uploads, chunks, metadata) to optimize for real-world usage patterns.
@@ -208,7 +208,7 @@ When rate limit is exceeded:
   ```
 
   ```python tab
-  # Using TusFlow Python client
+  # Using Tusflow Python client
   client = TusClient(
     rate_limit={
       'uploads_per_hour': 50,
@@ -218,8 +218,8 @@ When rate limit is exceeded:
   ```
 
   ```go tab
-  // Using TusFlow Go client
-  config := tusflow.Config{
+  // Using Tusflow Go client
+  config := Tusflow.Config{
     RateLimit: RateLimit{
       UploadsPerHour: 50,
       ChunksPerHour: 500,

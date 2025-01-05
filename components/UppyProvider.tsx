@@ -17,20 +17,6 @@ export const useUppy = () => {
 };
 
 const MIN_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB (S3 minimum)
-const MAX_CHUNK_SIZE = 50 * 1024 * 1024; // 50MB
-const OPTIMAL_CHUNK_COUNT = 10000; // Optimal number of chunks for large files
-
-const calculateOptimalChunkSize = (fileSize: number, networkSpeed: number) => {
-  let chunkSize = Math.ceil(fileSize / OPTIMAL_CHUNK_COUNT);
-
-  if (networkSpeed > 0) {
-    const networkBasedSize = networkSpeed * 1.5;
-    chunkSize = Math.min(chunkSize, networkBasedSize);
-  }
-
-  chunkSize = Math.max(MIN_CHUNK_SIZE, Math.min(chunkSize, MAX_CHUNK_SIZE));
-  return Math.ceil(chunkSize / (1024 * 1024)) * (1024 * 1024);
-};
 
 export const UppyProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -42,42 +28,34 @@ export const UppyProvider: React.FC<{ children: React.ReactNode }> = ({
     new Uppy({
       autoProceed: false,
       restrictions: {
-        maxFileSize: 5 * 1024 * 1024 * 1024,
+        maxFileSize: 8 * 1024 * 1024,
         minFileSize: 1000000,
         maxNumberOfFiles: 5,
       },
       debug: true,
       onBeforeUpload: (files: { [key: string]: UppyFile<Meta, TusBody> }) => {
         const file = Object.values(files)[0];
-        if (file?.size && file.size > 5 * 1024 * 1024 * 1024) {
-          toast.error('File size exceeds 5GB limit');
+        if (file?.size && file.size > 8 * 1024 * 1024) {
+          toast.error('File size exceeds 8MB limit');
           return false;
         }
         return true;
       },
     }).use(Tus, {
-      endpoint: 'https://tusflow-api.marsappollo3.workers.dev/files/',
+      endpoint: process.env.NEXT_PUBLIC_WORKERS_API_ENDPOINT,
       limit: 5,
-      onChunkComplete(chunkSize, bytesAccepted, bytesTotal) {
-        console.log('Chunk complete:', chunkSize, bytesAccepted, bytesTotal);
-      },
-      withCredentials: false,
+      withCredentials: true,
       overridePatchMethod: false,
       removeFingerprintOnSuccess: true,
       retryDelays: [0, 1000, 3000, 5000],
       onBeforeRequest: (req, file) => {
-        const dynamicChunkSize = calculateOptimalChunkSize(
-          file.size ?? 0,
-          networkSpeed ?? 0
+        req.setHeader(
+          'Authorization',
+          `Bearer ${process.env.NEXT_PUBLIC_WORKERS_API_KEY}`
         );
-        req.setHeader('Authorization', `Bearer 3ZWwFYmKYWzMZsiLUaDkbyPk`);
-      },
-      onAfterResponse: (req, res) => {
-        // Handle response if needed
-        console.log('Response:', res);
       },
       chunkSize: MIN_CHUNK_SIZE, // Set initial chunk size
-      onProgress: (bytesUploaded, bytesTotal) => {
+      onProgress: (bytesUploaded) => {
         const currentTime = Date.now();
         if (lastUploadTime > 0) {
           const timeDiff = currentTime - lastUploadTime;

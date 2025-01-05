@@ -1,6 +1,6 @@
 {
-  "title": "TusFlow Documentation",
-  "description": "TusFlow API Documentation",
+  "title": "Tusflow Documentation",
+  "description": "Tusflow API Documentation",
   "root": true,
   "pages": ["index", "configuration", "middleware", "features", "api-reference"]
 } 

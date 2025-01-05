@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { getGithubLastEdit } from 'fumadocs-core/server';
 import { CodeBlock, Pre } from 'fumadocs-ui/components/codeblock';
 import defaultMdxComponents from 'fumadocs-ui/mdx';
 import {
@@ -18,9 +19,25 @@ export default async function Page(props: {
   if (!page) notFound();
 
   const MDX = page.data.body;
+  const time = await getGithubLastEdit({
+    owner: 'Tusflow',
+    repo: 'tusflow-web',
+    sha: 'main',
+    path: `content/docs/${page.file.path}`,
+  });
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full}>
+    <DocsPage
+      editOnGithub={{
+        owner: 'Tusflow',
+        repo: 'tusflow-web',
+        sha: 'main',
+        path: `content/docs/${page.file.path}`,
+      }}
+      toc={page.data.toc}
+      full={page.data.full}
+      lastUpdate={new Date(time!)}
+    >
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
