@@ -1,10 +1,10 @@
 ---
 title: Getting Started
-description: Tusflow is an open-source, high-performance implementation of the TUS (resumable upload) protocol built on Cloudflare Workers. It provides enterprise-grade file upload infrastructure with built-in support for resumable uploads, chunking, and advanced security features.
+description: Tusflow API is an open-source, high-performance implementation of the TUS (resumable upload) protocol built on Cloudflare Workers. It provides enterprise-grade file upload infrastructure with built-in support for resumable uploads, chunking, and advanced security features.
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card'
-import { FileText, Upload, Shield, Zap } from 'lucide-react'
+import { FileText, Upload, Shield, Zap, Gauge, FileCheck, Database } from 'lucide-react'
 
 ## Key Features
 
@@ -21,22 +21,51 @@ import { FileText, Upload, Shield, Zap } from 'lucide-react'
     icon={<Zap className="w-6 h-6" />}
     href="/docs/api/features/edge-computing"
   />
-  <Card
-    title="Enterprise Security"
-    description="Advanced file validation, malware scanning and access controls"
-    icon={<Shield className="w-6 h-6" />}
-    href="/docs/api/features/security"
+<Card
+  title="Enterprise Security"
+  description="Robust protection with rate limiting, API authentication, file validation, and secure headers"
+  icon={<Shield className="w-6 h-6" />}
+  href="/docs/api/features/enterprise-security"
+/>
+ <Card
+    title="Observability"
+    description="Monitor API health and performance with built-in observability features"
+    icon={<Gauge className="w-6 h-6" />}
+    href="/docs/api/features/observability"
   />
- 
+    <Card
+    title="Chunk Management"
+    description="Smart file chunking with parallel uploads and automatic optimization"
+    icon={<FileCheck className="w-6 h-6" />}
+    href="/docs/api/features/chunk-management"
+  />
+  <Card
+    title="Storage Integration"
+    description="Direct integration with S3-compatible storage services"
+    icon={<Database className="w-6 h-6" />}
+    href="/docs/api/features/storage"
+  />
 </Cards>
 
 ## Why Tusflow?
 
-- **High Performance**: Built on Cloudflare's global edge network
-- **Developer Experience**: Simple integration with comprehensive documentation
-- **Enterprise Ready**: Production-grade security and reliability features
-- **Open Source**: MIT licensed and community driven
-- **Protocol Compliant**: Full TUS v1.0.0 protocol implementation
+1. **High Performance**  
+   - Powered by Cloudflare's global edge network for low latency and high-speed uploads.
+
+2. **Developer Experience**  
+   - Simple and intuitive integration with comprehensive documentation and starter templates.
+
+3. **Enterprise Ready**  
+   - Built with production-grade security, reliability, and scalability features to handle critical workloads.
+
+4. **Open Source**  
+   - Fully MIT licensed and community-driven, ensuring transparency and the freedom to customize.
+
+5. **Protocol Compliant**  
+   - Implements the full **TUS v1.0.0 protocol** for resumable file uploads, ensuring compatibility and reliability.
+
+6. **Cost Efficiency**  
+   - Designed to allow developers to self-host and deploy their own upload services, eliminating reliance on costly third-party solutions.
 
 ## Quick Start Guide
 
@@ -63,11 +92,6 @@ npm run deploy
     title="Configuration"
     description="Learn how to configure and customize Tusflow"
     href="/docs/api/configuration"
-  />
-  <Card
-    title="API Reference" 
-    description="Complete API documentation and endpoint references"
-    href="/docs/api/api-reference"
   />
   <Card
     title="Middleware"

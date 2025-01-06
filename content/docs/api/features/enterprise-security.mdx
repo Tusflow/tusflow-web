@@ -1,0 +1,176 @@
+---
+title: Enterprise Security
+description: Learn about Tusflow's robust security measures for enterprise-grade file uploads
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+## Overview
+
+Tusflow implements a comprehensive set of security measures to ensure that your file uploads are protected at every step. From rate limiting to authentication and file validation, we've got you covered.
+
+<Callout type="info">
+  Our enterprise-grade security features are designed to protect your data and prevent abuse of your upload endpoints.
+</Callout>
+
+## Key Security Features
+
+<Steps>
+  ### Rate Limiting
+  Prevent abuse and ensure fair usage of your upload endpoints.
+
+  ### Authentication
+  Secure your uploads with robust API key authentication.
+
+  ### File Validation
+  Ensure only allowed file types and sizes are uploaded.
+
+  ### Secure Headers
+  Implement best practices for web security headers.
+</Steps>
+
+## Detailed Security Measures
+
+### Rate Limiting
+
+Our rate limiting feature uses Upstash Redis to implement a sliding window algorithm, providing flexible and efficient request throttling.
+
+<Tabs items={['Features', 'Configuration']}>
+  <Tab value="Features">
+    - Customizable limits based on HTTP methods
+    - Sliding window algorithm for accurate throttling
+    - Automatic header setting for limit information
+  </Tab>
+  <Tab value="Configuration">
+    ```typescript
+    const limitConfig = RATE_LIMIT.LIMITS[method] || RATE_LIMIT.LIMITS.DEFAULT;
+    const ratelimit = new Ratelimit({
+      redis,
+      prefix: RATE_LIMIT.KEY_PREFIX,
+      limiter: Ratelimit.slidingWindow(
+        limitConfig.tokens,
+        `${limitConfig.interval} s`
+      ),
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Authentication
+
+We use Unkey for robust API key authentication, allowing for fine-grained access control and key management.
+
+<Callout type="warning">
+  Ensure your UNKEY_API_ID is properly set in your environment variables for authentication to work correctly.
+</Callout>
+
+Features:
+- Path-based exclusions for public routes
+- Custom error handling
+- Flexible invalid key handling
+
+### File Validation
+
+Our file validation middleware ensures that only allowed file types and sizes are processed, protecting your system from potential threats.
+
+<Tabs items={['Type Validation', 'Size Validation']}>
+  <Tab value="Type Validation">
+    ```typescript
+    if (FILE_VALIDATION.ENABLE_TYPE_VALIDATION && filename) {
+      const fileExt = path.extname(filename).toLowerCase();
+      const allowedTypes = FILE_VALIDATION.ALLOWED_FILE_TYPES;
+      if (allowedTypes && allowedTypes.length > 0 && !allowedTypes.includes(fileExt)) {
+        throw new ValidationError(ERROR_MESSAGES.FILE_VALIDATION.INVALID_FILE_TYPE, {
+          statusCode: 415,
+          errorCode: 'INVALID_FILE_TYPE',
+          details: {
+            allowedTypes: FILE_VALIDATION.ALLOWED_FILE_TYPES,
+            providedType: fileExt,
+          },
+        });
+      }
+    }
+    ```
+  </Tab>
+  <Tab value="Size Validation">
+    ```typescript
+    if (fileSize !== null) {
+      const maxSize = FILE_VALIDATION.MAX_FILE_SIZE;
+      const minSize = FILE_VALIDATION.MIN_FILE_SIZE;
+      if (maxSize && fileSize > maxSize) {
+        throw new ValidationError(ERROR_MESSAGES.FILE_VALIDATION.FILE_SIZE_EXCEEDED, {
+          statusCode: 413,
+          errorCode: 'FILE_TOO_LARGE',
+          details: { maxSize, providedSize: fileSize },
+        });
+      }
+      if (minSize && fileSize < minSize) {
+        throw new ValidationError(ERROR_MESSAGES.FILE_VALIDATION.FILE_SIZE_BELOW, {
+          statusCode: 413,
+          errorCode: 'FILE_TOO_SMALL',
+          details: { minSize, providedSize: fileSize },
+        });
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Secure Headers
+
+We implement a comprehensive set of secure headers to protect against various web vulnerabilities.
+
+```typescript
+const secureHeadersMiddleware = secureHeaders({
+  strictTransportSecurity: 'max-age=31536000; includeSubDomains',
+  contentSecurityPolicy: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'"],
+    imgSrc: ["'self'", 'data:'],
+    fontSrc: ["'self'"],
+    objectSrc: ["'none'"],
+    frameAncestors: ["'none'"],
+  },
+  permissionsPolicy: {
+    accelerometer: [],
+    camera: [],
+    geolocation: [],
+    gyroscope: [],
+    magnetometer: [],
+    microphone: [],
+    payment: [],
+    usb: [],
+  },
+  crossOriginEmbedderPolicy: true,
+  crossOriginOpenerPolicy: true,
+  crossOriginResourcePolicy: true,
+  referrerPolicy: 'strict-origin-when-cross-origin',
+});
+```
+
+## Best Practices
+
+<Callout type="warning">
+  While our security measures are robust, it's important to follow best practices to ensure the highest level of protection for your uploads.
+</Callout>
+
+1. **Regular Key Rotation**
+   - Implement a policy for regular API key rotation
+   - Use short-lived keys for sensitive operations
+
+2. **Monitoring and Alerting**
+   - Set up alerts for unusual upload patterns
+   - Monitor rate limit hits and authentication failures
+
+3. **Least Privilege Access**
+   - Use fine-grained permissions for API keys
+   - Regularly audit and remove unused keys
+
+4. **Secure Configuration Management**
+   - Use environment variables for sensitive configuration
+   - Implement a secure process for managing and updating security settings
+
+By leveraging these enterprise-grade security features and following best practices, you can ensure that your file uploads remain secure and your system protected from potential threats.

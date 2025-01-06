@@ -6,6 +6,8 @@ description: Monitor your Tusflow API health and performance with built-in obser
 import { Callout } from 'fumadocs-ui/components/callout'
 import { Steps } from 'fumadocs-ui/components/steps'
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { OpenStatusWidget } from '@/components/openstatus-status-widget';
+import BetterStackStatusWidget from '@/components/betterstack-status-widget';
 
 ## Overview
 
@@ -41,7 +43,7 @@ The health check:
 4. Returns detailed status headers
 
 ## BetterStack Integration
-
+<BetterStackStatusWidget />
 Monitor your Tusflow API with BetterStack's comprehensive observability platform:
 
 <Steps>
@@ -81,7 +83,7 @@ Example BetterStack configuration:
 ```
 
 ## OpenStatus Integration
-
+<OpenStatusWidget slug="tusflow" />
 Monitor your API status with OpenStatus's synthetic monitoring:
 
 <Steps>

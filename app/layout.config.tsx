@@ -23,6 +23,5 @@ export const baseOptions: BaseLayoutProps = {
       active: 'nested-url',
     },
   ],
-  disableThemeSwitch: true,
   githubUrl: 'https://github.com/Tusflow/',
 };

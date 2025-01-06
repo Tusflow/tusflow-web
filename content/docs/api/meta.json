@@ -2,5 +2,5 @@
   "title": "Tusflow Documentation",
   "description": "Tusflow API Documentation",
   "root": true,
-  "pages": ["index", "configuration", "middleware", "features", "api-reference"]
+  "pages": ["index", "configuration", "middleware", "features"]
 } 

@@ -17,6 +17,19 @@ export const useUppy = () => {
 };
 
 const MIN_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB (S3 minimum)
+const allowedFileTypes = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'video/mp4',
+  'video/quicktime',
+  'video/x-matroska', // For MKV
+  'audio/mpeg', // MP3
+  'audio/wav',
+  'audio/ogg',
+  'audio/webm',
+];
 
 export const UppyProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -28,15 +41,16 @@ export const UppyProvider: React.FC<{ children: React.ReactNode }> = ({
     new Uppy({
       autoProceed: false,
       restrictions: {
-        maxFileSize: 8 * 1024 * 1024,
+        maxFileSize: 500 * 1024 * 1024,
         minFileSize: 1000000,
         maxNumberOfFiles: 5,
+        allowedFileTypes: allowedFileTypes,
       },
       debug: true,
       onBeforeUpload: (files: { [key: string]: UppyFile<Meta, TusBody> }) => {
         const file = Object.values(files)[0];
-        if (file?.size && file.size > 8 * 1024 * 1024) {
-          toast.error('File size exceeds 8MB limit');
+        if (file?.size && file.size > 500 * 1024 * 1024) {
+          toast.error('File size exceeds 500MB limit');
           return false;
         }
         return true;

@@ -40,6 +40,11 @@ const techStack = [
     gradient: 'from-purple-500 to-purple-600',
   },
   {
+    name: 'AWS S3',
+    role: 'Storage',
+    gradient: 'from-pink-500 to-pink-600',
+  },
+  {
     name: 'Unkey',
     role: 'API Key Management',
     gradient: 'from-green-500 to-green-600',
@@ -440,7 +445,6 @@ const features = [
     items: [
       'Cloudflare Workers',
       'Global edge network',
-      'HTTP/3 & QUIC',
       'Auto-scaling',
       'High availability',
     ],

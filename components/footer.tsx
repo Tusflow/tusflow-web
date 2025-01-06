@@ -1,12 +1,15 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { StatusWidget } from '@openstatus/react';
 import { motion } from 'framer-motion';
+
+import BetterStackStatusWidget from '@/components/betterstack-status-widget';
+import { OpenStatusWidget } from '@/components/openstatus-status-widget';
 
 import { Icons } from './ui/icons';
 
@@ -26,6 +29,14 @@ const stagger = {
 
 export default function Footer() {
   const pathname = usePathname();
+  const { resolvedTheme } = useTheme();
+  const [iframeSrc, setIframeSrc] = useState('');
+
+  useEffect(() => {
+    setIframeSrc(
+      `https://tusflow.betteruptime.com/badge?theme=${resolvedTheme === 'dark' ? 'dark' : 'light'}`
+    );
+  }, [resolvedTheme]);
 
   if (pathname.startsWith('/docs')) {
     return null;
@@ -33,7 +44,7 @@ export default function Footer() {
 
   return (
     <motion.footer
-      className="w-full border-t  backdrop-blur-sm border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50"
+      className="w-full border-t backdrop-blur-sm border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -62,16 +73,25 @@ export default function Footer() {
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-500/5 rounded-lg blur-lg group-hover:blur-xl transition-all" />
                 <div className="relative">
-                  <Suspense
-                    fallback={
-                      <div className="h-6 w-24 bg-muted animate-pulse rounded" />
-                    }
-                  >
-                    <StatusWidget
-                      slug="Tusflow"
-                      href="https://Tusflow.openstatus.dev"
-                    />
-                  </Suspense>
+                  <div className="flex flex-row gap-8">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-muted-foreground">OpenStatus</span>
+                      <Suspense
+                        fallback={
+                          <div className="h-6 w-24 bg-muted animate-pulse rounded" />
+                        }
+                      >
+                        <OpenStatusWidget slug="tusflow" />
+                      </Suspense>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-muted-foreground">
+                        Better Stack
+                      </span>
+                      <BetterStackStatusWidget />
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -112,7 +132,15 @@ export default function Footer() {
               <div className="flex space-x-4">
                 {[
                   { href: 'https://github.com/Tusflow/', icon: 'github' },
-                  { href: 'https://x.com/evansso_', icon: 'twitter' },
+                  { href: 'https://x.com/tusflow', icon: 'twitter' },
+                  {
+                    href: 'https://bsky.app/profile/tusflow.bsky.social',
+                    icon: 'bluesky',
+                  },
+                  {
+                    href: 'https://www.patreon.com/c/Tusflow',
+                    icon: 'patreon',
+                  },
                 ].map((social, index) => (
                   <motion.div
                     key={index}
@@ -125,9 +153,11 @@ export default function Footer() {
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm border border-orange-100 dark:border-orange-900/50 text-muted-foreground hover:text-orange-500 transition-colors"
+                      className="relative flex items-center  justify-center w-10 h-10 rounded-lg bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm border border-orange-100 dark:border-orange-900/50 text-muted-foreground hover:text-orange-500 transition-colors"
                     >
-                      {Icons[social.icon]({ className: 'h-5 w-5' })}
+                      {Icons[social.icon]({
+                        className: `w-5 h-5 ${resolvedTheme === 'dark' ? 'fill-white' : 'fill-black'}`,
+                      })}
                     </Link>
                   </motion.div>
                 ))}
