@@ -32,6 +32,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/docs/api/features/edge-computing',
     '/docs/api/features/observability',
     '/docs/api/features/storage',
+    '/docs/api/features/enterprise-security',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString().split('T')[0],

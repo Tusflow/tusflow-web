@@ -36,7 +36,7 @@ const techStack = [
   {
     name: 'Upstash',
     icon: 'upstash',
-    role: 'Rate Limiting & Caching',
+    role: 'Serverless Redis Database & Rate Limiting',
     gradient: 'from-purple-500 to-purple-600',
   },
   {
@@ -114,7 +114,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <Link href="/docs" className="w-full sm:w-auto">
+              <Link href="/docs/api" className="w-full sm:w-auto">
                 <Button
                   size="lg"
                   className="w-full sm:w-auto font-medium text-sm sm:text-base h-10 sm:h-12 px-6 sm:px-8 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"

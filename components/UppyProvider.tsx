@@ -59,7 +59,7 @@ export const UppyProvider: React.FC<{ children: React.ReactNode }> = ({
       endpoint: process.env.NEXT_PUBLIC_WORKERS_API_ENDPOINT,
       limit: 5,
       withCredentials: true,
-      overridePatchMethod: false,
+      overridePatchMethod: true,
       removeFingerprintOnSuccess: true,
       retryDelays: [0, 1000, 3000, 5000],
       onBeforeRequest: (req, file) => {
