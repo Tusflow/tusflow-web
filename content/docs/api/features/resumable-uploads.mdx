@@ -1,67 +1,130 @@
 ---
 title: Resumable Uploads
-description: Resumable uploads allow clients to pause and resume file uploads, making the process more resilient to network issues and providing a better user experience.
+description: Learn how Tusflow leverages Upstash Redis, AWS S3 multipart uploads, and the TUS protocol for efficient and reliable resumable file uploads.
 ---
 
-## Starting an Upload
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
-To initiate a resumable upload:
+## Overview
 
-```http
-POST /files
-Host: your-api.example.com
-Tus-Resumable: 1.0.0
-Upload-Length: 100000000
-Content-Type: application/offset+octet-stream
-```
+Tusflow utilizes a powerful combination of Upstash Redis, AWS S3 multipart uploads, and the TUS protocol to provide a robust and efficient resumable upload solution.
 
-Response:
+<Callout type="info">
+  Resumable uploads allow clients to pause and resume file uploads, making the process more resilient to network issues and providing a better user experience.
+</Callout>
 
-```http
-HTTP/1.1 201 Created
-Location: https://your-api.example.com/files/24e533e02ec3bc40c387f1a0e460e216
-Tus-Resumable: 1.0.0
-```
+## Key Components
 
-## Pausing an Upload
+<Steps>
+  ### Upstash Redis
+  A serverless Redis database used for storing upload metadata and managing upload state.
 
-The upload can be paused at any time. The client should keep track of the upload URL and the number of bytes uploaded.
+  ### AWS S3 Multipart Uploads
+  Enables large file uploads to be split into smaller parts, uploaded independently, and then reassembled.
 
-## Resuming an Upload
+  ### TUS Protocol
+  An open protocol for resumable file uploads, ensuring consistency and interoperability.
+</Steps>
 
-To resume an upload, send a HEAD request to get the current offset:
+## Features
 
-```http
-HEAD /files/24e533e02ec3bc40c387f1a0e460e216
-Host: your-api.example.com
-Tus-Resumable: 1.0.0
-```
+### Upstash Redis Integration
+- Serverless and globally distributed
+- Low-latency access to upload metadata
+- Automatic scaling and high availability
 
-Response:
+### AWS S3 Multipart Upload
+- Support for large file uploads (up to 5TB)
+- Parallel upload of file parts
+- Ability to pause and resume uploads
 
-```http
-HTTP/1.1 200 OK
-Upload-Offset: 50000000
-Tus-Resumable: 1.0.0
-```
+### TUS Protocol Implementation
+- Standardized resumable upload process
+- Cross-platform compatibility
+- Built-in error handling and recovery
 
-Then continue uploading from the offset:
+## How It Works
 
-```http
-PATCH /files/24e533e02ec3bc40c387f1a0e460e216
-Host: your-api.example.com
-Tus-Resumable: 1.0.0
-Upload-Offset: 50000000
-Content-Type: application/offset+octet-stream
-Content-Length: 10000000
+<Callout type="warning">
+  Understanding the upload process is crucial for optimizing your application's performance and reliability.
+</Callout>
 
-[BINARY DATA]
-```
+1. **Initiate Upload**
+   - Client sends a POST request with file metadata
+   - Server creates an entry in Upstash Redis and initiates S3 multipart upload
 
-## Error Handling
+2. **Upload Chunks**
+   - Client sends file chunks using PATCH requests
+   - Server uploads parts to S3 and updates progress in Upstash Redis
 
-If a connection is lost during upload:
+3. **Resume Upload**
+   - Client can retrieve upload offset using HEAD request
+   - Server fetches current state from Upstash Redis
 
-1. Client can retrieve the last successful offset using HEAD request
-2. Resume upload from that offset using PATCH request
-3. No data needs to be re-uploaded
+4. **Complete Upload**
+   - After all chunks are uploaded, server completes S3 multipart upload
+   - Upload metadata is cleaned up from Upstash Redis
+
+## Best Practices
+
+1. **Optimal Chunk Size**
+   - Balance between network efficiency and memory usage
+   - Typically between 5MB to 15MB per chunk
+
+2. **Error Handling**
+   - Implement exponential backoff for retries
+   - Handle network disconnections gracefully
+
+3. **Progress Tracking**
+   - Utilize Upstash Redis for real-time progress updates
+   - Implement client-side progress bars for better UX
+
+## Code Examples
+
+<Tabs items={['Initiate Upload', 'Upload Chunk', 'Resume Upload']}>
+  <Tab value="Initiate Upload">
+    ```http
+    POST /files HTTP/1.1
+    Host: api.tusflow.com
+    Tus-Resumable: 1.0.0
+    Upload-Length: 100000000
+    Upload-Metadata: filename d29ya2Zsb3cuanBn,mimetype aW1hZ2UvanBlZw==
+
+    HTTP/1.1 201 Created
+    Location: https://<your-workers-endpoint>/files/24e533e02ec3bc40c387f1a0e460e216
+    Tus-Resumable: 1.0.0
+    ```
+  </Tab>
+  <Tab value="Upload Chunk">
+    ```http
+    PATCH /files/24e533e02ec3bc40c387f1a0e460e216 HTTP/1.1
+    Host: api.tusflow.com
+    Tus-Resumable: 1.0.0
+    Upload-Offset: 0
+    Content-Type: application/offset+octet-stream
+    Content-Length: 5242880
+
+    [BINARY CHUNK DATA]
+
+    HTTP/1.1 204 No Content
+    Tus-Resumable: 1.0.0
+    Upload-Offset: 5242880
+    ```
+  </Tab>
+  <Tab value="Resume Upload">
+    ```http
+    HEAD /files/24e533e02ec3bc40c387f1a0e460e216 HTTP/1.1
+    Host: api.tusflow.com
+    Tus-Resumable: 1.0.0
+
+    HTTP/1.1 200 OK
+    Upload-Offset: 5242880
+    Upload-Length: 100000000
+    Tus-Resumable: 1.0.0
+    ```
+  </Tab>
+</Tabs>
+
+By leveraging Upstash Redis, AWS S3 multipart uploads, and the TUS protocol, Tusflow provides a powerful and flexible resumable upload solution that can handle large files, network interruptions, and high concurrency with ease.

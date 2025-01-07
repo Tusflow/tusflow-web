@@ -1,6 +1,6 @@
 ---
 title: Chunk Management
-description: Learn how Tusflow handles large file uploads through intelligent chunking
+description: Learn how Tusflow optimizes large file uploads through intelligent chunking and parallel processing
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout'
@@ -9,76 +9,147 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 
 ## Overview
 
-Tusflow implements smart chunk management to handle large file uploads efficiently and reliably.
+Tusflow implements advanced chunk management to handle large file uploads efficiently and reliably, leveraging edge computing capabilities and dynamic optimization.
 
 <Callout type="info">
-  The default chunk size is 5MB, but Tusflow automatically adjusts this based on network conditions and file characteristics.
+  Tusflow automatically adjusts chunk sizes based on network conditions, file characteristics, and edge worker constraints, with sizes ranging from 5MB to 50MB.
 </Callout>
 
-## How It Works
+## Key Components
 
 <Steps>
-  ### File Analysis
-  When a file is selected for upload, Tusflow analyzes its size and type to determine the optimal chunking strategy.
-
-  ### Chunk Creation
-  The file is split into manageable chunks, with size determined by:
-  - Network conditions
-  - File size
-  - Memory constraints
-  - Client capabilities
+  ### Dynamic Chunk Sizing
+  Optimizes chunk size based on network speed, file size, and edge worker memory constraints.
 
   ### Parallel Processing
-  Multiple chunks are uploaded simultaneously to maximize throughput while maintaining stability.
+  Uploads multiple chunks simultaneously to maximize throughput while maintaining stability.
 
-  ### Assembly
-  Once all chunks are uploaded, they're automatically assembled in the correct order.
+  ### Adaptive Batching
+  Adjusts the number of concurrent uploads based on network conditions.
+
+  ### Checksum Verification
+  Ensures data integrity through MD5, SHA1, SHA256, or SHA512 checksums.
 </Steps>
-
 
 ## Features
 
-### Dynamic Sizing
-Tusflow automatically adjusts chunk sizes based on:
-- Upload speed
-- Success rate
-- Memory usage
-- Network stability
+### Intelligent Chunk Sizing
+- Considers network speed, file size, and edge worker memory limits
+- Dynamically adjusts between 5MB and 50MB
+- Ensures optimal upload performance and resource utilization
 
-### Parallel Processing
-- Multiple chunks upload simultaneously
-- Automatic concurrency management
-- Progress tracking per chunk
-- Bandwidth optimization
+### Parallel Upload Management
+- Concurrent chunk uploads (up to 10 simultaneous uploads)
+- Adaptive batch sizing based on network conditions
+- Progress tracking per chunk with rate-limited updates
 
-### Error Handling
-- Automatic retries
+### Error Handling and Recovery
+- Automatic retries with exponential backoff
 - Partial upload recovery
-- Checksum verification
-- Progress preservation
+- Circuit breaker implementation for failure management
+
+### Performance Optimization
+- Exponential moving average for network speed calculation
+- Memory-aware chunk processing
+- Efficient use of edge worker resources
+
+## How It Works
+
+<Callout type="warning">
+  Understanding the chunk management process is crucial for optimizing your application's upload performance and reliability.
+</Callout>
+
+1. **File Analysis**
+   - Analyze file size and type
+   - Calculate initial network speed
+
+2. **Chunk Creation**
+   - Determine optimal chunk size using `calculateOptimalChunkSize` function
+   - Consider edge worker memory constraints and network conditions
+
+3. **Parallel Processing**
+   - Upload chunks in parallel using adaptive batch sizes
+   - Dynamically adjust concurrency based on network speed
+
+4. **Progress Tracking**
+   - Update upload progress with rate limiting
+   - Store metadata in Upstash Redis for resumability
+
+5. **Completion and Verification**
+   - Verify all parts are uploaded correctly
+   - Complete multipart upload on S3
 
 ## Best Practices
 
-<Callout type="warning">
-  While parallel uploads can improve speed, too many concurrent uploads can degrade performance. Start with 3-5 parallel uploads and adjust based on your needs.
-</Callout>
+1. **Optimal Chunk Size Selection**
+   - Let Tusflow handle dynamic sizing
+   - Monitor and adjust `CHUNK_SIZE` configuration if needed
 
-1. **Chunk Size Selection**
-   - Consider network conditions
-   - Balance memory usage
-   - Account for client capabilities
+2. **Parallel Upload Configuration**
+   - Start with default `MAX_CONCURRENT` and `BATCH_SIZE` values
+   - Adjust based on your specific use case and performance requirements
 
-2. **Error Recovery**
-   - Implement retry logic
-   - Handle network failures
-   - Maintain chunk integrity
-
-3. **Performance Optimization**
-   - Use parallel uploads
-   - Implement caching
-   - Monitor upload speeds
+3. **Error Handling**
+   - Implement client-side retry logic
+   - Utilize Tusflow's built-in circuit breaker for failure management
 
 4. **Resource Management**
-   - Clean up incomplete uploads
-   - Monitor storage usage
-   - Handle timeouts properly
+   - Monitor edge worker memory usage
+   - Implement proper cleanup for incomplete uploads
+
+## Code Examples
+
+<Tabs items={['Calculate Optimal Chunk Size', 'Upload Chunks', 'Verify Checksum']}>
+  <Tab value="Calculate Optimal Chunk Size">
+    ```typescript
+    function calculateOptimalChunkSize(totalSize: number, networkSpeed: number): number {
+      const { MIN, MAX } = UPLOAD_CONFIG.CHUNK_SIZE;
+      const memoryBasedMax = Math.floor(WORKER_CONSTRAINTS.CHUNK_MEMORY_LIMIT / WORKER_CONSTRAINTS.NETWORK_OVERHEAD);
+      const optimalSize = Math.min(networkSpeed * 2, MAX, memoryBasedMax);
+      const minRequiredSize = Math.ceil(totalSize / UPLOAD_CONFIG.UPLOAD.MAX_PARTS);
+      return Math.max(Math.min(optimalSize, MAX), MIN, minRequiredSize);
+    }
+    ```
+  </Tab>
+  <Tab value="Upload Chunks">
+    ```typescript
+    async function uploadChunks(chunk: ArrayBuffer, uploadOffset: number, totalSize: number, cachedMetadata: UploadMetadata, s3Client: S3Client, redis: Redis, bucket: string, uploadId: string) {
+      // Calculate network speed and optimal chunk size
+      const optimalChunkSize = calculateOptimalChunkSize(totalSize, cachedMetadata.networkSpeed);
+      
+      // Process chunks in parallel
+      const chunks = Math.ceil(chunk.byteLength / optimalChunkSize);
+      const uploadPromises = [];
+
+      for (let i = 0; i < chunks; i++) {
+        // Upload chunk logic
+        // ...
+        uploadPromises.push(uploadPromise);
+      }
+
+      await Promise.all(uploadPromises);
+      
+      // Update progress
+      await updateProgress(redis, uploadId, cachedMetadata);
+    }
+    ```
+  </Tab>
+  <Tab value="Verify Checksum">
+    ```typescript
+    async function verifyChecksum(data: ArrayBuffer, algorithm: string, expectedChecksum: string): Promise<boolean> {
+      const supportedAlgorithms = ["md5", "sha1", "sha256", "sha512"];
+      if (!supportedAlgorithms.includes(algorithm.toLowerCase())) {
+        throw new Error(`Unsupported checksum algorithm: ${algorithm}`);
+      }
+
+      const hash = crypto.createHash(algorithm.toLowerCase());
+      hash.update(new Uint8Array(data));
+      const calculatedChecksum = hash.digest("base64");
+
+      return calculatedChecksum === expectedChecksum;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+By leveraging intelligent chunk management, parallel processing, and adaptive optimization, Tusflow provides a powerful and flexible upload solution that can handle large files, network fluctuations, and high concurrency with ease.
