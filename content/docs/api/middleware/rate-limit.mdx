@@ -1,80 +1,102 @@
 ---
 title: Rate Limiting
-description: Protect your API with intelligent rate limiting using Upstash Redis
+description: Protect your API with intelligent rate limiting using Unkey Ratelimit
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## Overview
 
-Tusflow uses [Upstash Ratelimit](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) for distributed rate limiting. The rate limiting middleware protects your API from abuse by limiting request frequency based on IP address and HTTP method.
+Tusflow uses [Unkey Ratelimit](https://www.unkey.com/docs/quickstart/ratelimiting/hono) for distributed rate limiting. The rate limiting middleware protects your API from abuse by limiting request frequency based on IP address and HTTP method.
 
 <Callout type="info">
-  Different rate limits are applied for various operations (uploads, chunks, metadata) to optimize for real-world usage patterns.
+  Different rate limits are applied for various operations (uploads, chunks,
+  metadata) to optimize for real-world usage patterns.
 </Callout>
 
 ## Implementation
 
-The rate limiting middleware uses Upstash's Redis client with sliding window algorithm:
+The rate limiting middleware uses Unkey Ratelimit client with sliding window algorithm:
 
 ```typescript
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis/cloudflare';
+import { ERROR_MESSAGES, RATE_LIMIT } from '@/config';
+import type { Bindings } from '@/types/honoTypes';
+import { Ratelimit } from '@unkey/ratelimit';
+import type { Context, Next } from 'hono';
+import { env } from 'hono/adapter';
 
-export const createRateLimiter = () => {
-    return async (c: Context, next: Next) => {
-        if (!RATE_LIMIT.ENABLE) {
-            return next();
-        }
+export const RateLimiter = () => {
+  return async (c: Context, next: Next) => {
+    if (!RATE_LIMIT.ENABLE) {
+      return next();
+    }
 
-        const redis = new Redis({
-            url: UPSTASH_REDIS_REST_URL,
-            token: UPSTASH_REDIS_REST_TOKEN,
-        });
+    const { UNKEY_ROOT_KEY } = env<Bindings>(c);
 
-        const identifier = c.req.header('CF-Connecting-IP') || 'unknown';
-        const method = c.req.method;
+    const identifier = c.req.header('CF-Connecting-IP') || 'unknown';
+    const method = c.req.method;
 
-        // Get rate limit config based on HTTP method
-        const limitConfig = RATE_LIMIT.LIMITS[method] || RATE_LIMIT.LIMITS.DEFAULT;
+    const fallback = (identifier: string) => ({
+      success: true,
+      limit: 0,
+      reset: 0,
+      remaining: 0,
+    });
 
-        const ratelimit = new Ratelimit({
-            redis,
-            prefix: RATE_LIMIT.KEY_PREFIX,
-            limiter: Ratelimit.slidingWindow(
-                limitConfig.tokens,
-                `${limitConfig.interval} s`
-            ),
-        });
+    // Get rate limit config based on HTTP method
+    const limitConfig =
+      RATE_LIMIT.LIMITS[method as keyof typeof RATE_LIMIT.LIMITS] ||
+      RATE_LIMIT.LIMITS.DEFAULT;
 
-        const { success, limit, reset, remaining } = await ratelimit.limit(
-            `${identifier}:${method}`
+    const ratelimit = new Ratelimit({
+      rootKey: UNKEY_ROOT_KEY,
+      namespace: RATE_LIMIT.NAMESPACE,
+      limit: limitConfig.tokens,
+      duration: `${limitConfig.interval} s`,
+      async: true,
+      timeout: {
+        ms: 3000, // only wait 3s at most before returning the fallback
+        fallback,
+      },
+      onError: (err, identifier) => {
+        console.error(`${identifier}:${method} - ${err.message}`);
+        return fallback(`${identifier}:${method}`);
+      },
+    });
+
+    try {
+      const { success, limit, reset, remaining } = await ratelimit.limit(
+        `${identifier}:${method}`
+      );
+
+      // Set rate limit headers
+      c.header('X-RateLimit-Limit', limit.toString());
+      c.header('X-RateLimit-Remaining', remaining.toString());
+      c.header('X-RateLimit-Reset', reset.toString());
+
+      if (!success) {
+        return c.json(
+          {
+            error: ERROR_MESSAGES.RATE_LIMIT.LIMIT_EXCEEDED,
+            code: 'RATE_LIMIT_EXCEEDED',
+            details: {
+              limit,
+              reset,
+              retryAfter: Math.ceil((reset - Date.now()) / 1000),
+            },
+          },
+          429
         );
+      }
 
-        // Set rate limit headers
-        c.header('X-RateLimit-Limit', limit.toString());
-        c.header('X-RateLimit-Remaining', remaining.toString());
-        c.header('X-RateLimit-Reset', reset.toString());
-
-        if (!success) {
-            throw new ValidationError(
-                ERROR_MESSAGES.RATE_LIMIT.LIMIT_EXCEEDED,
-                {
-                    statusCode: 429,
-                    errorCode: 'RATE_LIMIT_EXCEEDED',
-                    details: {
-                        limit,
-                        reset,
-                        retryAfter: Math.ceil((reset - Date.now()) / 1000),
-                    },
-                }
-            );
-        }
-
-        await next();
-    };
+      await next();
+    } catch (error) {
+      console.error('Rate limiter error:', error);
+      return c.json({ error: 'Rate limiting service error' }, 500);
+    }
+  };
 };
 ```
 
@@ -84,28 +106,171 @@ Rate limits are configured in `ratelimit-config.ts`:
 
 ```typescript
 export const RATE_LIMIT = {
-    ENABLE: false,
-    KEY_PREFIX: 'ratelimit:',
-    BLOCK_DURATION: 60 * 60, // 1 hour
-    LIMITS: {
-        // For initiating new uploads
-        POST: {
-            tokens: 50,      // 50 new uploads
-            interval: 3600   // per hour
-        },
-        // For upload chunks
-        PATCH: {
-            tokens: 500,     // 500 chunk uploads
-            interval: 3600   // per hour
-        },
-        // For other operations (HEAD, DELETE)
-        DEFAULT: {
-            tokens: 100,     // 100 operations
-            interval: 3600   // per hour
-        }
-    }
+  ENABLE: true,
+  NAMESPACE: 'tusflow-api',
+  BLOCK_DURATION: 60 * 60, // 1 hour
+  // Different limits for different endpoints
+  LIMITS: {
+    // For initiating new uploads
+    POST: {
+      tokens: 50, // Number of requests
+      interval: 3600, // Time window in seconds (1 hour)
+    },
+    // For upload chunks
+    PATCH: {
+      tokens: 500, // More tokens for chunk uploads
+      interval: 3600,
+    },
+    // For other operations (HEAD, DELETE)
+    DEFAULT: {
+      tokens: 100,
+      interval: 3600,
+    },
+  },
 };
 ```
+
+## Alternative: Using Upstash Ratelimit
+
+Tusflow also supports using Upstash Ratelimit as an alternative to Unkey Ratelimit. This option provides a Redis-based distributed rate limiting solution with Cloudflare Workers integration.
+
+<Steps>
+  ### Install Dependencies
+  
+  First, install the required packages:
+  
+  ```bash
+  npm install @upstash/ratelimit @upstash/redis
+  ```
+  
+  ### Implementation
+  
+  Replace the Unkey Ratelimit implementation with the following code:
+  
+  ```typescript
+  import { Ratelimit } from "@upstash/ratelimit";
+  import { Redis } from "@upstash/redis/cloudflare";
+  import type { Context, Next } from "hono";
+  import { env } from "hono/adapter";
+  import { ERROR_MESSAGES, RATE_LIMIT } from '@/config';
+  import type { Bindings } from '@/types/honoTypes';
+  
+  export const RateLimiter = () => {
+    return async (c: Context, next: Next) => {
+      if (!RATE_LIMIT.ENABLE) {
+        return next();
+      }
+  
+      const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = env<Bindings>(c);
+      const redis = new Redis({
+        url: UPSTASH_REDIS_REST_URL,
+        token: UPSTASH_REDIS_REST_TOKEN,
+      });
+      
+      const identifier = c.req.header("CF-Connecting-IP") || "unknown";
+      const method = c.req.method;
+      
+      // Get rate limit config based on HTTP method
+      const limitConfig =
+        RATE_LIMIT.LIMITS[method as keyof typeof RATE_LIMIT.LIMITS] ||
+        RATE_LIMIT.LIMITS.DEFAULT;
+        
+      const ratelimit = new Ratelimit({
+        redis,
+        prefix: RATE_LIMIT.PREFIX,
+        limiter: Ratelimit.slidingWindow(limitConfig.tokens, `${limitConfig.interval}s`),
+      });
+      
+      try {
+        const { success, limit, reset, remaining } = await ratelimit.limit(
+          `${identifier}:${method}`
+        );
+        
+        // Set rate limit headers
+        c.header("X-RateLimit-Limit", limit.toString());
+        c.header("X-RateLimit-Remaining", remaining.toString());
+        c.header("X-RateLimit-Reset", reset.toString());
+        
+        if (!success) {
+          return c.json(
+            {
+              error: ERROR_MESSAGES.RATE_LIMIT.LIMIT_EXCEEDED,
+              code: 'RATE_LIMIT_EXCEEDED',
+              details: {
+                limit,
+                reset,
+                retryAfter: Math.ceil((reset - Date.now()) / 1000),
+              },
+            },
+            429
+          );
+        }
+        
+        await next();
+      } catch (error) {
+        console.error('Rate limiter error:', error);
+        return c.json({ error: 'Rate limiting service error' }, 500);
+      }
+    };
+  };
+  ```
+  
+  ### Configuration
+  
+  Update your configuration to use the Upstash-specific settings:
+  
+  ```typescript
+  export const RATE_LIMIT = {
+    ENABLE: true,
+    PREFIX: "tusflow-api:ratelimit:",
+    BLOCK_DURATION: 60 * 60, // 1 hour
+    // Different limits for different endpoints
+    LIMITS: {
+      // For initiating new uploads
+      POST: {
+        tokens: 50, // Number of requests
+        interval: 3600, // Time window in seconds (1 hour)
+      },
+      // For upload chunks
+      PATCH: {
+        tokens: 500, // More tokens for chunk uploads
+        interval: 3600,
+      },
+      // For other operations (HEAD, DELETE)
+      DEFAULT: {
+        tokens: 100,
+        interval: 3600,
+      },
+    },
+  };
+  ```
+  
+  ### Environment Variables
+  
+  Add the following environment variables to your `.env` file or deployment configuration:
+  
+  ```
+  UPSTASH_REDIS_REST_URL=https://your-upstash-redis-url.upstash.io
+  UPSTASH_REDIS_REST_TOKEN=your-upstash-redis-token
+  ```
+  
+  ### Update Bindings Type
+  
+  Make sure to update your `honoTypes.ts` file to include the new environment variables:
+  
+  ```typescript
+  export interface Bindings {
+    // ... existing bindings
+    UPSTASH_REDIS_REST_URL: string;
+    UPSTASH_REDIS_REST_TOKEN: string;
+  }
+  ```
+</Steps>
+
+<Callout type="info">
+  Upstash provides a serverless Redis instance with a REST API, making it
+  well-suited for edge environments like Cloudflare Workers.
+</Callout>
 
 ## Rate Limit Headers
 
@@ -124,24 +289,25 @@ Rate limiting is part of the security middleware stack:
 ```typescript
 // Combined security middleware
 export const securityMiddleware = every(
-    secureHeadersMiddleware,
-    corsMiddleware,
-    authMiddleware,
-    csrfProtectionMiddleware,
-    rateLimitMiddleware
+  secureHeadersMiddleware,
+  corsMiddleware,
+  authMiddleware,
+  csrfProtectionMiddleware,
+  rateLimitMiddleware
 );
 ```
 
 ## Features
 
 1. **Method-Based Limits**
+
    - Different limits for uploads vs chunks
    - Configurable per HTTP method
    - Default fallback limits
    - Flexible token allocation
 
 2. **Distributed Rate Limiting**
-   - Redis-backed storage
+
    - Sliding window algorithm
    - Global rate limit state
    - High availability
@@ -179,55 +345,23 @@ When rate limit is exceeded:
   - Configure block duration
   - Enable in production
 
-  ### Monitor Usage
-  - Track rate limit headers
-  - Monitor blocked requests
-  - Set up alerts
-  - Analyze patterns
+### Monitor Usage
 
-  ### Handle Failures
-  - Implement retry logic
-  - Respect retry-after
-  - Cache rate limit state
-  - Handle errors gracefully
+- Track rate limit headers
+- Monitor blocked requests
+- Set up alerts
+- Analyze patterns
+
+### Handle Failures
+
+- Implement retry logic
+- Respect retry-after
+- Cache rate limit state
+- Handle errors gracefully
+
 </Steps>
 
-## Example Usage
-
-<Tabs items={["TypeScript", "Python", "Go"]}>
-  ```typescript tab
-  // Apply rate limiting
-  app.use('*', rateLimitMiddleware);
-
-  // Custom rate limits
-  const customLimiter = createRateLimiter({
-    tokens: 1000,
-    interval: 3600
-  });
-  app.use('/api/uploads', customLimiter);
-  ```
-
-  ```python tab
-  # Using Tusflow Python client
-  client = TusClient(
-    rate_limit={
-      'uploads_per_hour': 50,
-      'chunks_per_hour': 500
-    }
-  )
-  ```
-
-  ```go tab
-  // Using Tusflow Go client
-  config := Tusflow.Config{
-    RateLimit: RateLimit{
-      UploadsPerHour: 50,
-      ChunksPerHour: 500,
-    },
-  }
-  ```
-</Tabs>
-
 <Callout type="warning">
-  Always test rate limiting configuration in staging before deploying to production to ensure it doesn't impact legitimate users.
+  Always test rate limiting configuration in staging before deploying to
+  production to ensure it doesn't impact legitimate users.
 </Callout>

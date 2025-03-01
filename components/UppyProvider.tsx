@@ -58,16 +58,7 @@ export const UppyProvider: React.FC<{ children: React.ReactNode }> = ({
     }).use(Tus, {
       endpoint: process.env.NEXT_PUBLIC_WORKERS_API_ENDPOINT,
       limit: 5,
-      withCredentials: true,
-      overridePatchMethod: true,
-      removeFingerprintOnSuccess: true,
       retryDelays: [0, 1000, 3000, 5000],
-      onBeforeRequest: (req, file) => {
-        req.setHeader(
-          'Authorization',
-          `Bearer ${process.env.NEXT_PUBLIC_WORKERS_API_KEY}`
-        );
-      },
       chunkSize: MIN_CHUNK_SIZE, // Set initial chunk size
       onProgress: (bytesUploaded) => {
         const currentTime = Date.now();

@@ -3,13 +3,14 @@ title: Configuration
 description: Complete guide to Tusflow`s API configuration options
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout'
-import { Steps } from 'fumadocs-ui/components/steps'
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## Overview
 
 Tusflow's configuration is managed through:
+
 1. Environment variables in `wrangler.toml`
 2. TypeScript configuration modules in `config/`
 
@@ -36,6 +37,7 @@ AWS_BUCKET_NAME = ""
 UPSTASH_REDIS_REST_URL = ""
 UPSTASH_REDIS_REST_TOKEN = ""
 UNKEY_API_ID = ""
+UNKEY_ROOT_KEY = ""
 
 [observability]
 enabled = true
@@ -50,30 +52,30 @@ Configure upload behavior in `upload-config.ts`:
 
 ```typescript
 export const UPLOAD_CONFIG = {
-    DOMAIN: '',
-    CHUNK_SIZE: {
-        MIN: 5 * 1024 * 1024,    // 5MB
-        MAX: 50 * 1024 * 1024,   // 50MB
-        TARGET_UPLOAD_TIME: 1     // 1 second
-    },
-    RETRY: {
-        MAX_ATTEMPTS: 3,
-        DELAY: 500                // 500ms
-    },
-    CIRCUIT_BREAKER: {
-        TIMEOUT: 25000,          // 25 seconds
-        FAILURE_THRESHOLD: 3,
-        RESET_TIMEOUT: 5000      // 5 seconds
-    },
-    UPLOAD: {
-        INCOMPLETE_TTL: 24 * 60 * 60,  // 24 hours
-        MAX_PARTS: 10000,
-        TIMEOUT: 25000                 // 25 seconds
-    },
-    PARALLEL_UPLOADS: {
-        MAX_CONCURRENT: 10,
-        BATCH_SIZE: 5
-    }
+  DOMAIN: '',
+  CHUNK_SIZE: {
+    MIN: 5 * 1024 * 1024, // 5MB
+    MAX: 50 * 1024 * 1024, // 50MB
+    TARGET_UPLOAD_TIME: 1, // 1 second
+  },
+  RETRY: {
+    MAX_ATTEMPTS: 3,
+    DELAY: 500, // 500ms
+  },
+  CIRCUIT_BREAKER: {
+    TIMEOUT: 25000, // 25 seconds
+    FAILURE_THRESHOLD: 3,
+    RESET_TIMEOUT: 5000, // 5 seconds
+  },
+  UPLOAD: {
+    INCOMPLETE_TTL: 24 * 60 * 60, // 24 hours
+    MAX_PARTS: 10000,
+    TIMEOUT: 25000, // 25 seconds
+  },
+  PARALLEL_UPLOADS: {
+    MAX_CONCURRENT: 10,
+    BATCH_SIZE: 5,
+  },
 };
 ```
 
@@ -83,11 +85,11 @@ Set worker limits in `workers-config.ts`:
 
 ```typescript
 export const WORKER_CONSTRAINTS = {
-    MAX_EXECUTION_TIME: 25000,           // 25 seconds
-    MEMORY_LIMIT: 128 * 1024 * 1024,     // 128MB
-    CHUNK_MEMORY_LIMIT: 50 * 1024 * 1024, // 50MB
-    NETWORK_OVERHEAD: 1.2,                // 20% overhead
-    CONCURRENT_UPLOADS: 5
+  MAX_EXECUTION_TIME: 25000, // 25 seconds
+  MEMORY_LIMIT: 128 * 1024 * 1024, // 128MB
+  CHUNK_MEMORY_LIMIT: 50 * 1024 * 1024, // 50MB
+  NETWORK_OVERHEAD: 1.2, // 20% overhead
+  CONCURRENT_UPLOADS: 5,
 };
 ```
 
@@ -97,23 +99,23 @@ Configure TUS protocol in `tus-config.ts`:
 
 ```typescript
 export const TUS_CONFIG = {
-    VERSION: '1.0.0',
-    SUPPORTED_VERSIONS: ['1.0.0', '1.0.0'],
-    MAX_SIZE: 1024 * 1024 * 1024,  // 1GB
-    EXTENSIONS: [
-        'creation',
-        'creation-with-upload',
-        'termination',
-        'concatenation',
-        'checksum',
-        'expiration'
-    ],
-    CHECKSUM_ALGORITHMS: ['sha1', 'md5'],
-    HEADERS: {
-        RESUMABLE: 'Tus-Resumable',
-        VERSION: 'Tus-Version',
-        // ... other headers
-    }
+  VERSION: '1.0.0',
+  SUPPORTED_VERSIONS: ['1.0.0', '1.0.0'],
+  MAX_SIZE: 1024 * 1024 * 1024, // 1GB
+  EXTENSIONS: [
+    'creation',
+    'creation-with-upload',
+    'termination',
+    'concatenation',
+    'checksum',
+    'expiration',
+  ],
+  CHECKSUM_ALGORITHMS: ['sha1', 'md5'],
+  HEADERS: {
+    RESUMABLE: 'Tus-Resumable',
+    VERSION: 'Tus-Version',
+    // ... other headers
+  },
 };
 ```
 
@@ -123,23 +125,27 @@ Configure rate limits in `ratelimit-config.ts`:
 
 ```typescript
 export const RATE_LIMIT = {
-    ENABLE: false,
-    KEY_PREFIX: 'ratelimit:',
-    BLOCK_DURATION: 60 * 60,  // 1 hour
-    LIMITS: {
-        POST: {
-            tokens: 50,      // New uploads
-            interval: 3600   // 1 hour
-        },
-        PATCH: {
-            tokens: 500,     // Chunk uploads
-            interval: 3600
-        },
-        DEFAULT: {
-            tokens: 100,
-            interval: 3600
-        }
-    }
+  ENABLE: true,
+  NAMESPACE: 'tusflow-api',
+  BLOCK_DURATION: 60 * 60, // 1 hour
+  // Different limits for different endpoints
+  LIMITS: {
+    // For initiating new uploads
+    POST: {
+      tokens: 50, // Number of requests
+      interval: 3600, // Time window in seconds (1 hour)
+    },
+    // For upload chunks
+    PATCH: {
+      tokens: 500, // More tokens for chunk uploads
+      interval: 3600,
+    },
+    // For other operations (HEAD, DELETE)
+    DEFAULT: {
+      tokens: 100,
+      interval: 3600,
+    },
+  },
 };
 ```
 
@@ -149,20 +155,20 @@ Manage security in `security-config.ts`:
 
 ```typescript
 export const SECURITY_CONFIG = {
-    ALLOWED_ORIGINS: ['*'],
-    ALLOWED_METHODS: ['GET', 'POST', 'PATCH', 'HEAD', 'DELETE', 'OPTIONS'],
-    ALLOWED_HEADERS: [
-        'Content-Type',
-        'Upload-Length',
-        'Upload-Metadata',
-        // ... other headers
-    ],
-    EXPOSE_HEADERS: [
-        'Location',
-        'Upload-Offset',
-        // ... other headers
-    ],
-    CREDENTIALS: true
+  ALLOWED_ORIGINS: ['*'],
+  ALLOWED_METHODS: ['GET', 'POST', 'PATCH', 'HEAD', 'DELETE', 'OPTIONS'],
+  ALLOWED_HEADERS: [
+    'Content-Type',
+    'Upload-Length',
+    'Upload-Metadata',
+    // ... other headers
+  ],
+  EXPOSE_HEADERS: [
+    'Location',
+    'Upload-Offset',
+    // ... other headers
+  ],
+  CREDENTIALS: true,
 };
 ```
 
@@ -172,13 +178,19 @@ Set file validation rules in `fileValidation-config.ts`:
 
 ```typescript
 export const FILE_VALIDATION = {
-    ENABLE_TYPE_VALIDATION: true,
-    ALLOWED_FILE_TYPES: [
-        '.pdf', '.doc', '.docx', '.txt',
-        '.jpg', '.jpeg', '.png', '.mp4'
-    ],
-    MAX_FILE_SIZE: 100 * 1024 * 1024,  // 100MB
-    MIN_FILE_SIZE: 1024                 // 1KB
+  ENABLE_TYPE_VALIDATION: true,
+  ALLOWED_FILE_TYPES: [
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.txt',
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.mp4',
+  ],
+  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
+  MIN_FILE_SIZE: 1024, // 1KB
 };
 ```
 
@@ -188,19 +200,19 @@ Define error messages in `error-config.ts`:
 
 ```typescript
 export const ERROR_MESSAGES = {
-    UPLOAD: {
-        LENGTH_REQUIRED: 'Upload-Length or Upload-Defer-Length header required',
-        INVALID_OFFSET: 'Invalid Upload-Offset header',
-        // ... other upload errors
-    },
-    S3: {
-        MULTIPART_INIT_FAILED: 'Failed to initialize multipart upload',
-        // ... other S3 errors
-    },
-    RATE_LIMIT: {
-        LIMIT_EXCEEDED: 'Rate limit exceeded. Please try again later.',
-        // ... other rate limit errors
-    }
+  UPLOAD: {
+    LENGTH_REQUIRED: 'Upload-Length or Upload-Defer-Length header required',
+    INVALID_OFFSET: 'Invalid Upload-Offset header',
+    // ... other upload errors
+  },
+  S3: {
+    MULTIPART_INIT_FAILED: 'Failed to initialize multipart upload',
+    // ... other S3 errors
+  },
+  RATE_LIMIT: {
+    LIMIT_EXCEEDED: 'Rate limit exceeded. Please try again later.',
+    // ... other rate limit errors
+  },
 };
 ```
 
@@ -210,9 +222,9 @@ Configure caching in `cache-config.ts`:
 
 ```typescript
 export const CACHE_CONFIG = {
-    CACHE_NAME: 'Tusflow-api-cache',
-    MAX_AGE: UPLOAD_CONFIG.UPLOAD.INCOMPLETE_TTL,
-    VARY_HEADERS: ['Accept', 'Accept-Encoding', 'Authorization']
+  CACHE_NAME: 'Tusflow-api-cache',
+  MAX_AGE: UPLOAD_CONFIG.UPLOAD.INCOMPLETE_TTL,
+  VARY_HEADERS: ['Accept', 'Accept-Encoding', 'Authorization'],
 };
 ```
 
@@ -225,21 +237,25 @@ export const CACHE_CONFIG = {
   - Set appropriate file size limits
   - Configure authentication
 
-  ### Performance Tuning
-  - Adjust chunk sizes based on network conditions
-  - Configure parallel upload limits
-  - Set appropriate timeouts
-  - Enable caching where possible
+### Performance Tuning
 
-  ### Error Handling
-  - Configure meaningful error messages
-  - Set up proper logging
-  - Implement retry strategies
-  - Monitor error rates
+- Adjust chunk sizes based on network conditions
+- Configure parallel upload limits
+- Set appropriate timeouts
+- Enable caching where possible
+
+### Error Handling
+
+- Configure meaningful error messages
+- Set up proper logging
+- Implement retry strategies
+- Monitor error rates
+
 </Steps>
 
 <Callout type="warning">
-  Always test configuration changes in a staging environment before deploying to production.
+  Always test configuration changes in a staging environment before deploying to
+  production.
 </Callout>
 
 ## Configuration Import
@@ -248,17 +264,18 @@ Import and use configurations in your application:
 
 ```typescript
 import {
-    UPLOAD_CONFIG,
-    WORKER_CONSTRAINTS,
-    TUS_CONFIG,
-    RATE_LIMIT,
-    SECURITY_CONFIG,
-    FILE_VALIDATION,
-    ERROR_MESSAGES,
-    CACHE_CONFIG
+  CACHE_CONFIG,
+  ERROR_MESSAGES,
+  FILE_VALIDATION,
+  RATE_LIMIT,
+  SECURITY_CONFIG,
+  TUS_CONFIG,
+  UPLOAD_CONFIG,
+  WORKER_CONSTRAINTS,
 } from '@/config';
 
 // Example usage
 const maxChunkSize = UPLOAD_CONFIG.CHUNK_SIZE.MAX;
 const allowedTypes = FILE_VALIDATION.ALLOWED_FILE_TYPES;
 const corsOrigins = SECURITY_CONFIG.ALLOWED_ORIGINS;
+```
